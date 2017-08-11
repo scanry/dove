@@ -6,8 +6,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,8 +152,8 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 		}
 	}
 
-	@PreDestroy
-	public void destroy() {
+	@Override
+	public void shutdown() {
 		if (null != workerGroup) {
 			workerGroup.shutdownGracefully();
 		}

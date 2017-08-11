@@ -39,4 +39,6 @@ public interface RpcServer {
 	 * @param rpcServiceName
 	 */
 	public void remove(String rpcServiceName);
+	
+	public void shutdown();
 }

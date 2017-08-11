@@ -1,4 +1,4 @@
-package six.com.rpc;
+package six.com.rpc.client;
 
 
 public enum FutureState {

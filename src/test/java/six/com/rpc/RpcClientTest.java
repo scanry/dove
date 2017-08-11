@@ -25,11 +25,11 @@ public class RpcClientTest{
 		String name = "six";
 		ExecutorService executor = Executors.newFixedThreadPool(20);
 		for (int i = 0; i < requestCount; i++) {
-			TestService testService = client.lookupService(targetHost, targetPort, TestService.class, result -> {
-				System.out.println("result:" + result);
-				cdl.countDown();
-			});
-//			TestService testService = client.lookupService(targetHost, targetPort, TestService.class);
+//			TestService testService = client.lookupService(targetHost, targetPort, TestService.class, result -> {
+//				System.out.println("result:" + result);
+//				cdl.countDown();
+//			});
+			TestService testService = client.lookupService(targetHost, targetPort, TestService.class);
 //			try {
 //				long startTime = System.currentTimeMillis();
 //				Object result = testService.say(name + "-" + index++);
@@ -54,7 +54,9 @@ public class RpcClientTest{
 					System.out.println("消耗时间:" + totalTime);
 				} catch (Exception e) {
 					e.printStackTrace();
-				} 
+				}finally {
+					cdl.countDown();
+				}
 			});
 		}
 		try {
@@ -64,7 +66,7 @@ public class RpcClientTest{
 		}
 		System.out.println("总消耗时间:" + allTime);
 		System.out.println("平均消耗时间:" + allTime / index);
-		client.destroy();
+		client.shutdown();
 		executor.shutdown();
 	}
 }

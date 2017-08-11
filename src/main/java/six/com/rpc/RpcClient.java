@@ -1,6 +1,6 @@
-package six.com.rpc.client;
+package six.com.rpc;
 
-import six.com.rpc.AsyCallback;
+import six.com.rpc.client.ClientToServerConnection;
 import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.protocol.RpcResponse;
 
@@ -80,4 +80,6 @@ public interface RpcClient {
 	 * @param connection
 	 */
 	public void removeConnection(ClientToServerConnection connection);
+	
+	void shutdown();
 }

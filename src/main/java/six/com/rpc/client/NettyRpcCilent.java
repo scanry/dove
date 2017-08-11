@@ -25,7 +25,7 @@ import net.sf.cglib.proxy.MethodProxy;
 import six.com.rpc.AbstractRemote;
 import six.com.rpc.AsyCallback;
 import six.com.rpc.NettyConstant;
-import six.com.rpc.WrapperFuture;
+import six.com.rpc.RpcClient;
 import six.com.rpc.exception.RpcInvokeException;
 import six.com.rpc.exception.RpcNotFoundServiceException;
 import six.com.rpc.exception.RpcRejectServiceException;
@@ -121,7 +121,7 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 	 */
 	private Map<String, Object> serviceWeakHashMap;
 	// 请求超时时间 10秒
-	private long callTimeout = 10000;
+	private long callTimeout = 30000;
 	// 建立连接超时时间 60秒
 	private long connectionTimeout = 60000;
 
@@ -233,9 +233,7 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 	public RpcResponse synExecute(RpcRequest rpcRequest) {
 		WrapperFuture wrapperFuture = doExecute(rpcRequest, null);
 		RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
-		if (rpcResponse.getStatus() == RpcResponseStatus.timeout) {
-			throw new RpcTimeoutException("execute rpcRequest[" + rpcRequest.toString() + "] timeout");
-		} else if (rpcResponse.getStatus() == RpcResponseStatus.notFoundService) {
+		if (rpcResponse.getStatus() == RpcResponseStatus.notFoundService) {
 			throw new RpcNotFoundServiceException(rpcResponse.getMsg());
 		} else if (rpcResponse.getStatus() == RpcResponseStatus.reject) {
 			throw new RpcRejectServiceException(rpcResponse.getMsg());
@@ -321,7 +319,8 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		pool.remove(connection);
 	}
 
-	public void destroy() {
+	@Override
+	public void shutdown() {
 		if (null != workerGroup) {
 			workerGroup.shutdownGracefully();
 		}

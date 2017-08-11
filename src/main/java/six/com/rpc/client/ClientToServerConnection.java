@@ -11,7 +11,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import six.com.rpc.AsyCallback;
-import six.com.rpc.WrapperFuture;
+import six.com.rpc.RpcClient;
 import six.com.rpc.protocol.RpcMsg;
 import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.protocol.RpcResponse;
