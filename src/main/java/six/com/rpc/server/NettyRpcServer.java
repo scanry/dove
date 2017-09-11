@@ -57,6 +57,11 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 		this(loaclHost, trafficPort, 0, 0, new RpcSerialize() {
 		});
 	}
+	
+	public NettyRpcServer(String loaclHost, int trafficPort,int workerGroupThreads) {
+		this(loaclHost, trafficPort, 0, workerGroupThreads, new RpcSerialize() {
+		});
+	}
 
 	public NettyRpcServer(String loaclHost, int trafficPort, int bossGroupThreads, int workerGroupThreads,
 			RpcSerialize rpcSerialize) {
@@ -77,7 +82,17 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 						ch.pipeline().addLast(new ServerHandler(NettyRpcServer.this));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
-		thread = new Thread(new Runner());
+		thread = new Thread(()->{
+			try {
+				Channel ch = serverBootstrap.bind(NettyRpcServer.this.loaclHost,NettyRpcServer.this.trafficPort).sync().channel();
+				ch.closeFuture().sync();
+			} catch (InterruptedException e) {
+				log.error("netty serverBootstrap err", e);
+			} finally {
+				workerGroup.shutdownGracefully();
+				bossGroup.shutdownGracefully();
+			}
+		});
 		thread.setDaemon(true);
 		thread.start();
 	}
@@ -123,7 +138,6 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 			methodName=null!=rpcAnnotation?rpcAnnotation.name():protocolMethod.getName();
 			final String serviceName = getServiceName(protocolName, methodName);
 			registerMap.put(serviceName, new WrapperServiceImpl(instance, protocolMethod));
-			log.info("register rpc service:" + serviceName);
 		}
 	}
 
@@ -135,21 +149,6 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 	@Override
 	public void remove(String rpcServiceName) {
 		registerMap.remove(rpcServiceName);
-	}
-
-	class Runner implements Runnable {
-		@Override
-		public void run() {
-			try {
-				Channel ch = serverBootstrap.bind(loaclHost, trafficPort).sync().channel();
-				ch.closeFuture().sync();
-			} catch (InterruptedException e) {
-				log.error("netty serverBootstrap err", e);
-			} finally {
-				workerGroup.shutdownGracefully();
-				bossGroup.shutdownGracefully();
-			}
-		}
 	}
 
 	@Override

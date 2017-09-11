@@ -131,6 +131,11 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		this(0, new RpcSerialize() {
 		});
 	}
+	
+	public NettyRpcCilent(int workerGroupThreads) {
+		this(workerGroupThreads, new RpcSerialize() {
+		});
+	}
 
 	public NettyRpcCilent(int workerGroupThreads, RpcSerialize rpcSerialize) {
 		super(rpcSerialize);
