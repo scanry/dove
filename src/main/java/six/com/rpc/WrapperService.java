@@ -1,5 +1,6 @@
 package six.com.rpc;
 
+
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
@@ -13,5 +14,5 @@ public interface WrapperService {
 	 * @param paras
 	 * @return
 	 */
-	public Object invoke(Object[] paras);
+	Object invoke(Object[] paras)throws Exception;
 }

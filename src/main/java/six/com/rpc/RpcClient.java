@@ -13,34 +13,14 @@ public interface RpcClient {
 
 
 	/**
-	 * 根据请求主机:端口+服务名称生成 requestId
-	 * 
-	 * @param targetHost
-	 *            请求主机
-	 * @param targetPort
-	 *            请求端口
-	 * @param serviceName
-	 *            服务名称
-	 * @return
-	 */
-	public String createRequestId(String targetHost, int targetPort, String serviceName);
-
-	/**
-	 * 同步执行请求
+	 * 执行请求
 	 * 
 	 * @param RPCRequest
 	 * @return
 	 */
-	public RpcResponse synExecute(RpcRequest RPCRequest);
+	public RpcResponse execute(RpcRequest RPCRequest);
 
-	/**
-	 * 异步执行请求，请求完成时 ，执行回调callback
-	 * 
-	 * @param rpcRequest
-	 * @param callback
-	 */
-	public void asyExecute(RpcRequest rpcRequest, AsyCallback callback);
-
+	
 	/**
 	 * 
 	 * <p>

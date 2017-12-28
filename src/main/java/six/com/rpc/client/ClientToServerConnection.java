@@ -10,7 +10,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import six.com.rpc.AsyCallback;
 import six.com.rpc.RpcClient;
 import six.com.rpc.protocol.RpcMsg;
 import six.com.rpc.protocol.RpcRequest;
@@ -57,8 +56,8 @@ public class ClientToServerConnection extends NettyConnection {
 	 * @param callTimeout
 	 * @return
 	 */
-	public WrapperFuture send(RpcRequest rpcRequest, AsyCallback callback, long timeout) {
-		WrapperFuture wrapperFuture = new WrapperFuture(rpcRequest, callback);
+	public WrapperFuture send(RpcRequest rpcRequest,long timeout) {
+		WrapperFuture wrapperFuture = new WrapperFuture(rpcRequest);
 		wrapperFuture.setSendTime(System.currentTimeMillis());
 		requestMap.put(rpcRequest.getId(), wrapperFuture);
 		ChannelFuture channelFuture = super.writeAndFlush(rpcRequest);
@@ -67,9 +66,11 @@ public class ClientToServerConnection extends NettyConnection {
 			channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
 				@Override
 				public void operationComplete(Future<? super Void> future) throws Exception {
-					if (future.isSuccess() || future.isDone()) {
+					if (future.isSuccess()) {
 						log.debug("send rpcRequest successed");
 					} else {
+						wrapperFuture.onComplete(null, System.currentTimeMillis());
+						requestMap.remove(rpcRequest.getId());
 						log.debug("send rpcRequest failed");
 					}
 				}

@@ -1,6 +1,8 @@
 package six.com.rpc.server;
 
-import six.com.rpc.WrapperService;
+import java.util.concurrent.ExecutorService;
+
+import six.com.rpc.WrapperServiceTuple;
 
 /**
  * @author 作者
@@ -8,6 +10,8 @@ import six.com.rpc.WrapperService;
  * @date 创建时间：2017年3月20日 上午10:03:05 rpc Server
  */
 public interface RpcServer {
+
+	void start();
 
 	/**
 	 * <p>
@@ -23,7 +27,9 @@ public interface RpcServer {
 	 * @param tagetOb
 	 *            必须有值 否则抛运行时异常
 	 */
-	public void register(Class<?> protocolClass,Object tagetOb);
+	public void register(Class<?> protocol, Object instance);
+
+	public void register(ExecutorService bizExecutorService, Class<?> protocol, Object instance);
 
 	/**
 	 * 通过rpcServiceName 获取 RpcService
@@ -31,7 +37,7 @@ public interface RpcServer {
 	 * @param rpcServiceName
 	 * @return
 	 */
-	public WrapperService get(String rpcServiceName);
+	public WrapperServiceTuple getWrapperServiceTuple(String rpcServiceName);
 
 	/**
 	 * 通过rpcServiceName 移除指定 RpcService
@@ -39,6 +45,8 @@ public interface RpcServer {
 	 * @param rpcServiceName
 	 */
 	public void remove(String rpcServiceName);
-	
+
+	ExecutorService getDefaultBizExecutorService();
+
 	public void shutdown();
 }

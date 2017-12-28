@@ -24,7 +24,7 @@ public class AbstractRemote implements Remote {
 	}
 	
 	protected String getServiceName(String className,String methodName){
-		return className+"."+methodName;
+		return className+"_"+methodName;
 	}
 
 }

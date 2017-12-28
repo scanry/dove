@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -26,6 +27,7 @@ import six.com.rpc.AbstractRemote;
 import six.com.rpc.AsyCallback;
 import six.com.rpc.NettyConstant;
 import six.com.rpc.RpcClient;
+import six.com.rpc.exception.RpcClientException;
 import six.com.rpc.exception.RpcInvokeException;
 import six.com.rpc.exception.RpcNotFoundServiceException;
 import six.com.rpc.exception.RpcRejectServiceException;
@@ -123,7 +125,7 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 	// 请求超时时间 10秒
 	private long callTimeout = 30000;
 	// 建立连接超时时间 60秒
-	private long connectionTimeout = 60000;
+	private long connectionTimeout = 10000;
 
 	private static AtomicInteger requestIndex = new AtomicInteger(0);
 
@@ -131,7 +133,7 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		this(0, new RpcSerialize() {
 		});
 	}
-	
+
 	public NettyRpcCilent(int workerGroupThreads) {
 		this(workerGroupThreads, new RpcSerialize() {
 		});
@@ -153,14 +155,15 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 			@Override
 			public Object intercept(Object targetOb, Method method, Object[] args, MethodProxy arg3) throws Throwable {
 				String requestId = createRequestId(targetHost, targetPort, method.getName());
-				String serviceName=getServiceName(clz.getName(), method.getName());
+				String serviceName = getServiceName(clz.getName(), method.getName());
 				RpcRequest rpcRequest = new RpcRequest();
 				rpcRequest.setId(requestId);
 				rpcRequest.setCommand(serviceName);
 				rpcRequest.setCallHost(targetHost);
 				rpcRequest.setCallPort(targetPort);
 				rpcRequest.setParams(args);
-				asyExecute(rpcRequest, asyCallback);
+				rpcRequest.setAsyCallback(asyCallback);
+				execute(rpcRequest);
 				return null;
 			}
 		});
@@ -179,20 +182,24 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 				public Object intercept(Object targetOb, Method method, Object[] args, MethodProxy arg3)
 						throws Throwable {
 					String requestId = createRequestId(targetHost, targetPort, method.getName());
-					String serviceName=getServiceName(clz.getName(), method.getName());
+					String serviceName = getServiceName(clz.getName(), method.getName());
 					RpcRequest rpcRequest = new RpcRequest();
 					rpcRequest.setId(requestId);
 					rpcRequest.setCommand(serviceName);
 					rpcRequest.setCallHost(targetHost);
 					rpcRequest.setCallPort(targetPort);
 					rpcRequest.setParams(args);
-					RpcResponse rpcResponse = synExecute(rpcRequest);
+					RpcResponse rpcResponse = execute(rpcRequest);
 					return rpcResponse.getResult();
 				}
 			});
 			return enhancer.create();
 		});
 		return (T) service;
+	}
+
+	public String buildClass(Class<?> clz) {
+		return null;
 	}
 
 	private void checkParma(String targetHost, int targetPort, Class<?> clz) {
@@ -207,7 +214,7 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		}
 	}
 
-	public String createRequestId(String targetHost, int targetPort, String serviceName) {
+	private static String createRequestId(String targetHost, int targetPort, String serviceName) {
 		long threadId = Thread.currentThread().getId();
 		StringBuilder requestId = new StringBuilder();
 		requestId.append(MAC).append("/");
@@ -235,31 +242,34 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 	}
 
 	@Override
-	public RpcResponse synExecute(RpcRequest rpcRequest) {
-		WrapperFuture wrapperFuture = doExecute(rpcRequest, null);
-		RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
-		if (rpcResponse.getStatus() == RpcResponseStatus.notFoundService) {
-			throw new RpcNotFoundServiceException(rpcResponse.getMsg());
-		} else if (rpcResponse.getStatus() == RpcResponseStatus.reject) {
-			throw new RpcRejectServiceException(rpcResponse.getMsg());
-		} else if (rpcResponse.getStatus() == RpcResponseStatus.invokeErr) {
-			throw new RpcInvokeException(rpcResponse.getMsg());
+	public RpcResponse execute(RpcRequest rpcRequest) {
+		WrapperFuture wrapperFuture = doExecute(rpcRequest);
+		if (!wrapperFuture.hasAsyCallback()) {
+			RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
+			if (null == rpcResponse) {
+				throw new RpcTimeoutException(
+						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + callTimeout + "]");
+			} else if (rpcResponse.getStatus() == RpcResponseStatus.UNFOUND_SERVICE) {
+				throw new RpcNotFoundServiceException(rpcResponse.getMsg());
+			} else if (rpcResponse.getStatus() == RpcResponseStatus.REJECT) {
+				throw new RpcRejectServiceException(rpcResponse.getMsg());
+			} else if (rpcResponse.getStatus() == RpcResponseStatus.INVOKE_ERR) {
+				throw new RpcInvokeException(rpcResponse.getMsg());
+			} else {
+				return rpcResponse;
+			}
 		} else {
-			return rpcResponse;
+			return null;
 		}
 	}
 
-	@Override
-	public void asyExecute(RpcRequest rpcRequest, AsyCallback callback) {
-		doExecute(rpcRequest, callback);
-	}
 
-	private WrapperFuture doExecute(RpcRequest rpcRequest, AsyCallback callback) {
+	private WrapperFuture doExecute(RpcRequest rpcRequest) {
 		ClientToServerConnection clientToServerConnection = findHealthyNettyConnection(rpcRequest);
 		try {
-			return clientToServerConnection.send(rpcRequest, callback, callTimeout);
+			return clientToServerConnection.send(rpcRequest,callTimeout);
 		} catch (Exception e) {
-			throw new RpcInvokeException(e);
+			throw new RpcClientException(e);
 		}
 	}
 
@@ -291,7 +301,9 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(workerGroup);
 		bootstrap.channel(NioSocketChannel.class);
-		bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+		bootstrap.option(ChannelOption.SO_KEEPALIVE, true).option(ChannelOption.TCP_NODELAY, true)
+				// .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+				.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
 			public void initChannel(SocketChannel ch) throws Exception {

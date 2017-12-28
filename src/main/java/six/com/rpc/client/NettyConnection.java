@@ -63,8 +63,8 @@ public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		super.channelInactive(ctx);
 		doConnect();
+		super.channelInactive(ctx);
 	}
 
 	protected abstract void doConnect();

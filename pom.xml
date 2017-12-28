@@ -15,8 +15,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<slf4j>1.7.21</slf4j>
 		<logback>1.2.2</logback>
-		<netty.version>4.1.9.Final</netty.version>
+		<netty.version>4.1.19.Final</netty.version>
 		<cglib>3.2.4</cglib>
+		<grpc>1.8.0</grpc>
 	</properties>
 
 	<dependencies>
@@ -88,11 +89,23 @@
 			<artifactId>cglib</artifactId>
 			<version>${cglib}</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.javassist/javassist -->
+		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>3.22.0-GA</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
 			<scope>test</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.grpc/grpc-all -->
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-all</artifactId>
+			<version>${grpc}</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -100,7 +113,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>3.6.0</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>

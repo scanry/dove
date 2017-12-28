@@ -2,8 +2,8 @@ package six.com.rpc.client;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import six.com.rpc.AsyCallback;
-import six.com.rpc.exception.RpcTimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.protocol.RpcResponse;
 
@@ -14,8 +14,6 @@ import six.com.rpc.protocol.RpcResponse;
  */
 public class WrapperFuture {
 
-	private volatile FutureState state = FutureState.DOING;
-
 	private volatile long sendTime;
 
 	private volatile long receiveTime;
@@ -23,14 +21,13 @@ public class WrapperFuture {
 	private volatile RpcRequest rpcRequest;
 
 	private volatile RpcResponse rpcResponse;
-
-	private AsyCallback asyCallback;
+	
+	private AtomicBoolean executeAsyCallback=new AtomicBoolean(false);
 
 	private final CountDownLatch cdl=new CountDownLatch(1);
 
-	public WrapperFuture(RpcRequest rpcRequest, AsyCallback asyCallback) {
+	public WrapperFuture(RpcRequest rpcRequest) {
 		this.rpcRequest = rpcRequest;
-		this.asyCallback = asyCallback;
 	}
 
 	public long getSendTime() {
@@ -52,20 +49,19 @@ public class WrapperFuture {
 	public void onComplete(RpcResponse response, long receiveTime) {
 		this.rpcResponse = response;
 		this.receiveTime = receiveTime;
-		done();
-		if (null == asyCallback) {
-			cdl.countDown();
-		} else {
-			asyCallback.execute(response.getResult());
+		cdl.countDown();
+		if(null!=rpcRequest.getAsyCallback()&&executeAsyCallback.compareAndSet(false, true)) {
+			rpcRequest.getAsyCallback().execute(response.getResult());
 		}
 	}
 
-	private synchronized void done() {
-		state = FutureState.DONE;
+
+	public boolean hasAsyCallback() {
+		return null!=rpcRequest.getAsyCallback();
 	}
 	
 	public RpcResponse getResult(long timeout) {
-		if (state.isDoneState()) {
+		if (null!=rpcResponse) {
 			return rpcResponse;
 		}
 		try {
@@ -75,9 +71,6 @@ public class WrapperFuture {
 				cdl.await(timeout, TimeUnit.MILLISECONDS);
 			}
 		} catch (InterruptedException e) {}
-		if (state.isDoingState()){
-			throw new RpcTimeoutException("execute rpcRequest[" + rpcRequest.toString() + "] timeout["+timeout+"]");
-		}
 		return rpcResponse;
 	}
 }

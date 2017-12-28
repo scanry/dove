@@ -1,12 +1,14 @@
 package six.com.rpc.server;
 
+import java.util.concurrent.RejectedExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import six.com.rpc.WrapperService;
+import six.com.rpc.WrapperServiceTuple;
 import six.com.rpc.exception.RpcSystenException;
 import six.com.rpc.exception.RpcSystenExceptions;
 import six.com.rpc.protocol.RpcMsg;
@@ -34,39 +36,53 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 	protected void channelRead0(ChannelHandlerContext ctx, RpcMsg msg) throws Exception {
 		RpcResponse rpcesponse = null;
 		if (msg instanceof RpcRequest) {
-			rpcesponse = processRequest(ctx, (RpcRequest) msg);
+			processRequest(ctx, (RpcRequest) msg);
 		} else {
 			String errMsg = "ServerHandler messageReceived type not support: class=" + msg.getClass();
 			rpcesponse = new RpcResponse();
 			rpcesponse.setMsg(errMsg);
 			log.error(errMsg);
+			ctx.writeAndFlush(rpcesponse);
 		}
-		ctx.writeAndFlush(rpcesponse);
 	}
 
-	private RpcResponse processRequest(ChannelHandlerContext ctx, RpcRequest rpcRequest) {
-		WrapperService wrapperService = rpcServer.get(rpcRequest.getCommand());
-		RpcResponse rpcResponse = new RpcResponse();
+	private void processRequest(ChannelHandlerContext ctx, RpcRequest rpcRequest) {
+		final WrapperServiceTuple wrapperServiceTuple = rpcServer.getWrapperServiceTuple(rpcRequest.getCommand());
+		final RpcResponse rpcResponse = new RpcResponse();
 		rpcResponse.setId(rpcRequest.getId());
 		String address = ctx.channel().remoteAddress().toString();
-		if (null != wrapperService) {
-			log.debug("server received coommand[" + rpcRequest.getCommand() + "] from:" + address);
+		if (null != wrapperServiceTuple) {
 			try {
-				Object result = wrapperService.invoke(rpcRequest.getParams());
-				rpcResponse.setStatus(RpcResponseStatus.succeed);
-				rpcResponse.setResult(result);
-			} catch (Exception e) {
-				String errMsg = ExceptionUtils.getExceptionMsg(e);
-				rpcResponse.setStatus(RpcResponseStatus.invokeErr);
-				rpcResponse.setMsg(errMsg);
-				log.error("invoke request[" + address + "] err", e);
+				wrapperServiceTuple.getExecutorService().submit(() -> {
+					log.debug("server received coommand[" + rpcRequest.getCommand() + "] from:" + address);
+					try {
+						Object result = wrapperServiceTuple.getWrapperService().invoke(rpcRequest.getParams());
+						rpcResponse.setStatus(RpcResponseStatus.SUCCEED);
+						rpcResponse.setResult(result);
+					} catch (Exception e) {
+						String errMsg = ExceptionUtils.getExceptionMsg(e);
+						rpcResponse.setStatus(RpcResponseStatus.INVOKE_ERR);
+						rpcResponse.setMsg(errMsg);
+						log.error("invoke request[" + address + "] err", e);
+					}
+					ctx.writeAndFlush(rpcResponse);
+				});
+			} catch (RejectedExecutionException e) {
+				// 业务处理线程池满了，拒绝异常
+				rpcResponse.setStatus(RpcResponseStatus.REJECT);
+				String msg = "the service is too busy and reject rpcRequest[" + address + "]:"
+						+ rpcRequest.getCommand();
+				rpcResponse.setMsg(msg);
+				log.error(msg);
+				ctx.writeAndFlush(rpcResponse);
 			}
 		} else {
-			rpcResponse.setStatus(RpcResponseStatus.notFoundService);
-			rpcResponse.setMsg("did not find service by rpcRequest[" + address + "]:" + rpcRequest.getCommand());
-			log.error("did not find service by rpcRequest[" + address + "]:" + rpcRequest.getCommand());
+			rpcResponse.setStatus(RpcResponseStatus.UNFOUND_SERVICE);
+			String msg = "unfound service by rpcRequest[" + address + "]:" + rpcRequest.getCommand();
+			rpcResponse.setMsg(msg);
+			log.error(msg);
+			ctx.writeAndFlush(rpcResponse);
 		}
-		return rpcResponse;
 	}
 
 	@Override

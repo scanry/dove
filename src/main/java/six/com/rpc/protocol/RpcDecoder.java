@@ -1,14 +1,17 @@
 package six.com.rpc.protocol;
 
 import java.net.SocketAddress;
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import six.com.rpc.exception.RpcSystenExceptions;
 
 /**
@@ -27,62 +30,68 @@ import six.com.rpc.exception.RpcSystenExceptions;
  *  <p>结束</p>
  * 
  */
-public class RpcDecoder extends ByteToMessageDecoder implements RpcProtocol {
+public class RpcDecoder extends LengthFieldBasedFrameDecoder implements RpcProtocol {
 
 	final static Logger log = LoggerFactory.getLogger(RpcDecoder.class);
-	
+
 	private RpcSerialize rpcSerialize;
 
-	public RpcDecoder(RpcSerialize rpcSerialize){
-		if(null==rpcSerialize){
-			throw new NullPointerException("rpcSerialize must be not null");
-		}
-		this.rpcSerialize=rpcSerialize;
+	public RpcDecoder(RpcSerialize rpcSerialize) {
+		super(RpcProtocol.MAX_BODY_SIZE, RpcProtocol.MSG_TYPE, RpcProtocol.BODY_LENGTH);
+		Objects.requireNonNull(rpcSerialize, "rpcSerialize must be not null");
+		this.rpcSerialize = rpcSerialize;
 	}
-	
+
 	@Override
-	protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, List<Object> out) throws Exception {
-		if (buffer.readableBytes() >= RpcProtocol.HEAD_MIN_LENGTH) {
-			buffer.markReaderIndex();
-			byte msgType = buffer.readByte();
-			if (msgType == RpcProtocol.HEARTBEAT) {
-				log.debug("received heartbeat from " + getRemoteAddress(ctx));
-			} else if (msgType != RpcProtocol.REQUEST && msgType != RpcProtocol.RESPONSE) {
-				buffer.resetReaderIndex();
-				log.error("received illegal msg type[" + msgType + "] from" + getRemoteAddress(ctx));
-				throw RpcSystenExceptions.ILLEGAL_MSG_ERR;
-			} else {
-				int dataLength = buffer.readInt();
-				// 如果dataLength过大，可能导致问题
-				if (buffer.readableBytes() < dataLength) {
-					buffer.resetReaderIndex();
-					return;
-				}
-				if (RpcProtocol.MAX_BODY_SIZE > 0 && dataLength > RpcProtocol.MAX_BODY_SIZE) {
-					throw RpcSystenExceptions.BODY_TOO_BIG_ERR;
-				}
-				byte[] data = new byte[dataLength];
-				buffer.readBytes(data);
-				if(RpcProtocol.REQUEST==msgType){
-					try{
-						RpcRequest rpcRequest = rpcSerialize.unSerialize(data, RpcRequest.class);
-						out.add(rpcRequest);
-					}catch (Exception e) {
-						log.error("did not unSerialize rpcRequest from "+getRemoteAddress(ctx),e);
+	public Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+		Object decodeResult = null;
+		ByteBuf frame = null;
+		try {
+			frame = (ByteBuf) super.decode(ctx, in);
+			if (null != frame) {
+				ByteBuffer byteBuffer = frame.nioBuffer();
+				byte msgType = byteBuffer.get();
+				if (msgType == RpcProtocol.HEARTBEAT) {
+					log.debug("received heartbeat from " + getRemoteAddress(ctx));
+				} else {
+					int dataLength = byteBuffer.getInt();
+					byte[] data = null;
+					if (RpcProtocol.REQUEST == msgType) {
+						data = new byte[dataLength];
+						byteBuffer.get(data);
+						try {
+							decodeResult = rpcSerialize.unSerialize(data, RpcRequest.class);
+						} catch (Exception e) {
+							log.error("did not unSerialize rpcRequest from " + getRemoteAddress(ctx), e);
+						}
+					} else if (RpcProtocol.RESPONSE == msgType) {
+						data = new byte[dataLength];
+						byteBuffer.get(data);
+						try {
+							decodeResult = rpcSerialize.unSerialize(data, RpcResponse.class);
+						} catch (Exception e) {
+							log.error("did not unSerialize rpcResponse from " + getRemoteAddress(ctx), e);
+						}
+					} else {
+						throw RpcSystenExceptions.ILLEGAL_MSG_ERR;
 					}
-				}else if(RpcProtocol.RESPONSE==msgType){
-					try{
-						RpcResponse rpcResponse = rpcSerialize.unSerialize(data, RpcResponse.class);
-						out.add(rpcResponse);
-					}catch (Exception e) {
-						log.error("did not unSerialize rpcResponse from "+getRemoteAddress(ctx),e);
-					}
-				}else{
-					throw RpcSystenExceptions.ILLEGAL_MSG_ERR;
 				}
 			}
+		} catch (Exception e) {
+			log.error("decode exception, " + getRemoteAddress(ctx));
+			ctx.close().addListener(new ChannelFutureListener() {
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					log.info("closeChannel: close the connection to remote address[{}] result: {}",
+							getRemoteAddress(ctx), future.isSuccess());
+				}
+			});
+		} finally {
+			if (null != frame) {
+				frame.release();
+			}
 		}
-
+		return decodeResult;
 	}
 
 	public static String getRemoteAddress(ChannelHandlerContext ctx) {

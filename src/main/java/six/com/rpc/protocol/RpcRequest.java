@@ -3,6 +3,8 @@ package six.com.rpc.protocol;
 import java.io.Serializable;
 import java.util.Map;
 
+import six.com.rpc.AsyCallback;
+
 /**
  * @author six
  * @date 2016年6月2日 下午4:14:39 rpc 请求
@@ -24,7 +26,8 @@ public class RpcRequest extends RpcMsg implements Serializable {
 	
 	private Map<String,Object> paramsMap;
 	
-
+	private transient AsyCallback asyCallback;
+	
 	public RpcRequest() {
 		super(RpcProtocol.REQUEST);
 	}
@@ -68,7 +71,13 @@ public class RpcRequest extends RpcMsg implements Serializable {
 	public void setParamsMap(Map<String, Object> paramsMap) {
 		this.paramsMap = paramsMap;
 	}
+	public AsyCallback getAsyCallback() {
+		return asyCallback;
+	}
 
+	public void setAsyCallback(AsyCallback asyCallback) {
+		this.asyCallback = asyCallback;
+	}
 	
 	public String toString(){
 		return "@"+callHost+":"+callPort+"/"+command+"/"+getId();

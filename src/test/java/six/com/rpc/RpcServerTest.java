@@ -11,8 +11,9 @@ import six.com.rpc.server.RpcServer;
 public class RpcServerTest {
 
 	public static void main(String[] args) throws InterruptedException {
-		RpcServer server=new NettyRpcServer("127.0.0.1", 8180);
+		RpcServer server=new NettyRpcServer("127.0.0.1", 80);
 		server.register(TestService.class, new TestServiceImpl());
+		server.start();
 		RpcServerTest wait=new RpcServerTest();
 		synchronized (wait) {
 			wait.wait();

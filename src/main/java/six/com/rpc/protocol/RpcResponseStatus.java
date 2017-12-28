@@ -10,25 +10,25 @@ public interface RpcResponseStatus {
 	/**
 	 * 成功
 	 */
-	int succeed = 1;
+	int SUCCEED = 1;
 
 	/**
 	 * 拒绝
 	 */
-	int reject = 2;
+	int REJECT= 2;
 
 	/**
 	 * 超时
 	 */
-	int timeout = 3;
+	int TIMEOUT = 3;
 
 	/**
 	 * 执行异常
 	 */
-	int invokeErr = 4;
+	int INVOKE_ERR= 4;
 
 	/**
 	 * 没有找到服务
 	 */
-	int notFoundService = 5;
+	int UNFOUND_SERVICE= 5;
 }
