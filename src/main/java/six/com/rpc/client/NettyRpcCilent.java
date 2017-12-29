@@ -1,12 +1,7 @@
 package six.com.rpc.client;
 
-import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,13 +15,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
-import six.com.rpc.AbstractRemote;
 import six.com.rpc.AsyCallback;
 import six.com.rpc.NettyConstant;
 import six.com.rpc.RpcClient;
+import six.com.rpc.WrapperServiceProxyFactory;
 import six.com.rpc.exception.RpcClientException;
 import six.com.rpc.exception.RpcInvokeException;
 import six.com.rpc.exception.RpcNotFoundServiceException;
@@ -38,6 +30,7 @@ import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.protocol.RpcResponse;
 import six.com.rpc.protocol.RpcResponseStatus;
 import six.com.rpc.protocol.RpcSerialize;
+import six.com.rpc.proxy.JavaWrapperServiceProxyFactory;
 
 /**
  * @author 作者
@@ -71,44 +64,9 @@ import six.com.rpc.protocol.RpcSerialize;
  * 
  * 
  */
-public class NettyRpcCilent extends AbstractRemote implements RpcClient {
+public class NettyRpcCilent extends AbstractClient implements RpcClient {
 
 	final static Logger log = LoggerFactory.getLogger(NettyRpcCilent.class);
-
-	private static String MAC;
-	private static String PID;
-
-	static {
-		MAC = getLocalMac();
-		PID = getPid();
-	}
-
-	private static String getLocalMac() {
-		String mac = "";
-		try {
-			InetAddress ia = InetAddress.getLocalHost();
-			byte[] macBytes = NetworkInterface.getByInetAddress(ia).getHardwareAddress();
-			StringBuffer sb = new StringBuffer("");
-			for (int i = 0; i < macBytes.length; i++) {
-				int temp = macBytes[i] & 0xff;
-				String str = Integer.toHexString(temp);
-				if (str.length() == 1) {
-					sb.append("0" + str);
-				} else {
-					sb.append(str);
-				}
-			}
-			mac = sb.toString().toUpperCase();
-		} catch (Exception e) {
-		}
-		return mac;
-	}
-
-	private static String getPid() {
-		String name = ManagementFactory.getRuntimeMXBean().getName();
-		String pid = name.split("@")[0];
-		return pid;
-	}
 
 	private ClientAcceptorIdleStateTrigger IdleStateTrigger = new ClientAcceptorIdleStateTrigger();
 
@@ -127,47 +85,28 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 	// 建立连接超时时间 60秒
 	private long connectionTimeout = 10000;
 
-	private static AtomicInteger requestIndex = new AtomicInteger(0);
-
 	public NettyRpcCilent() {
-		this(0, new RpcSerialize() {
-		});
+		this(0);
 	}
 
 	public NettyRpcCilent(int workerGroupThreads) {
-		this(workerGroupThreads, new RpcSerialize() {
-		});
+		this(new JavaWrapperServiceProxyFactory(), new RpcSerialize() {
+		}, workerGroupThreads);
 	}
 
-	public NettyRpcCilent(int workerGroupThreads, RpcSerialize rpcSerialize) {
-		super(rpcSerialize);
+	public NettyRpcCilent(WrapperServiceProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
+			int workerGroupThreads) {
+		super(wrapperServiceProxyFactory, rpcSerialize);
 		workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);
 		pool = new ConnectionPool<>();
 		serviceWeakHashMap = Collections.synchronizedMap(new java.util.WeakHashMap<>());
 	}
 
-	@SuppressWarnings("unchecked")
+	@Override
 	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, final AsyCallback asyCallback) {
 		checkParma(targetHost, targetPort, clz);
-		Enhancer enhancer = new Enhancer();
-		enhancer.setSuperclass(clz);
-		enhancer.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object targetOb, Method method, Object[] args, MethodProxy arg3) throws Throwable {
-				String requestId = createRequestId(targetHost, targetPort, method.getName());
-				String serviceName = getServiceName(clz.getName(), method.getName());
-				RpcRequest rpcRequest = new RpcRequest();
-				rpcRequest.setId(requestId);
-				rpcRequest.setCommand(serviceName);
-				rpcRequest.setCallHost(targetHost);
-				rpcRequest.setCallPort(targetPort);
-				rpcRequest.setParams(args);
-				rpcRequest.setAsyCallback(asyCallback);
-				execute(rpcRequest);
-				return null;
-			}
-		});
-		return (T) enhancer.create();
+		return getWrapperServiceProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
+				asyCallback);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -175,25 +114,8 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		checkParma(targetHost, targetPort, clz);
 		String key = serviceKey(targetHost, targetPort, clz);
 		Object service = serviceWeakHashMap.computeIfAbsent(key, mapkey -> {
-			Enhancer enhancer = new Enhancer();
-			enhancer.setSuperclass(clz);
-			enhancer.setCallback(new MethodInterceptor() {
-				@Override
-				public Object intercept(Object targetOb, Method method, Object[] args, MethodProxy arg3)
-						throws Throwable {
-					String requestId = createRequestId(targetHost, targetPort, method.getName());
-					String serviceName = getServiceName(clz.getName(), method.getName());
-					RpcRequest rpcRequest = new RpcRequest();
-					rpcRequest.setId(requestId);
-					rpcRequest.setCommand(serviceName);
-					rpcRequest.setCallHost(targetHost);
-					rpcRequest.setCallPort(targetPort);
-					rpcRequest.setParams(args);
-					RpcResponse rpcResponse = execute(rpcRequest);
-					return rpcResponse.getResult();
-				}
-			});
-			return enhancer.create();
+			return getWrapperServiceProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
+					null);
 		});
 		return (T) service;
 	}
@@ -212,20 +134,6 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		if (!clz.isInterface()) {
 			throw new IllegalArgumentException("this clz[" + clz.getName() + "] is not tnterface");
 		}
-	}
-
-	private static String createRequestId(String targetHost, int targetPort, String serviceName) {
-		long threadId = Thread.currentThread().getId();
-		StringBuilder requestId = new StringBuilder();
-		requestId.append(MAC).append("/");
-		requestId.append(PID).append("/");
-		requestId.append(threadId).append("@");
-		requestId.append(targetHost).append(":");
-		requestId.append(targetPort).append("/");
-		requestId.append(serviceName).append("/");
-		requestId.append(System.currentTimeMillis()).append("/");
-		requestId.append(requestIndex.incrementAndGet());
-		return requestId.toString();
 	}
 
 	/**
@@ -263,11 +171,10 @@ public class NettyRpcCilent extends AbstractRemote implements RpcClient {
 		}
 	}
 
-
 	private WrapperFuture doExecute(RpcRequest rpcRequest) {
 		ClientToServerConnection clientToServerConnection = findHealthyNettyConnection(rpcRequest);
 		try {
-			return clientToServerConnection.send(rpcRequest,callTimeout);
+			return clientToServerConnection.send(rpcRequest, callTimeout);
 		} catch (Exception e) {
 			throw new RpcClientException(e);
 		}

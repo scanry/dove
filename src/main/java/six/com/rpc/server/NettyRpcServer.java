@@ -27,9 +27,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.NettyRuntime;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import six.com.rpc.AbstractRemote;
 import six.com.rpc.NettyConstant;
-import six.com.rpc.RpcService;
 import six.com.rpc.WrapperService;
 import six.com.rpc.WrapperServiceProxyFactory;
 import six.com.rpc.WrapperServiceTuple;
@@ -43,7 +41,7 @@ import six.com.rpc.proxy.JavaWrapperServiceProxyFactory;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:11:44
  */
-public class NettyRpcServer extends AbstractRemote implements RpcServer {
+public class NettyRpcServer extends AbstractServer implements RpcServer {
 
 	final static Logger log = LoggerFactory.getLogger(NettyRpcServer.class);
 
@@ -78,24 +76,21 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 
 	private ServerBootstrap serverBootstrap;
 
-	private WrapperServiceProxyFactory wrapperServiceProxyFactory;
-
 	private boolean useEpoll;
 
 	public NettyRpcServer(String loaclHost, int trafficPort) {
-		this(loaclHost, trafficPort, 0, 0, 0, new RpcSerialize() {
-		});
+		this(loaclHost, trafficPort, 0, 0, 0);
 	}
 
 	public NettyRpcServer(String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads,
 			int workerBizThreads) {
-		this(loaclHost, trafficPort, workerIoThreads, workerCodeThreads, workerBizThreads, new RpcSerialize() {
-		});
+		this(new JavaWrapperServiceProxyFactory(), new RpcSerialize() {
+		}, loaclHost, trafficPort, workerIoThreads, workerCodeThreads, workerBizThreads);
 	}
 
-	public NettyRpcServer(String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads,
-			int workerBizThreads, RpcSerialize rpcSerialize) {
-		super(rpcSerialize);
+	public NettyRpcServer(WrapperServiceProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
+			String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads, int workerBizThreads) {
+		super(wrapperServiceProxyFactory, rpcSerialize);
 		this.loaclHost = loaclHost;
 		this.trafficPort = trafficPort;
 		bossGroup = new NioEventLoopGroup(1, new ThreadFactory() {
@@ -196,13 +191,10 @@ public class NettyRpcServer extends AbstractRemote implements RpcServer {
 		}
 		String protocolName = protocol.getName();
 		Method[] protocolMethods = protocol.getMethods();
-		String methodName = null;
 		WrapperService wrapperService = null;
 		for (Method protocolMethod : protocolMethods) {
-			RpcService rpcAnnotation = protocolMethod.getAnnotation(RpcService.class);
-			methodName = null != rpcAnnotation ? rpcAnnotation.name() : protocolMethod.getName();
-			final String serviceName = getServiceName(protocolName, methodName);
-			wrapperService = wrapperServiceProxyFactory.newServerWrapperService(instance, protocolMethod);
+			final String serviceName = getServiceName(protocolName, protocolMethod);
+			wrapperService = getWrapperServiceProxyFactory().newServerWrapperService(instance, protocolMethod);
 			registerMap.put(serviceName, new WrapperServiceTuple(wrapperService, defaultBizExecutorService));
 		}
 

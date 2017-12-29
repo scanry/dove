@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import six.com.rpc.WrapperService;
 import six.com.rpc.WrapperServiceProxyFactory;
+import six.com.rpc.client.NettyRpcCilent;
 
 /**
  * @author sixliu
@@ -16,7 +17,7 @@ import six.com.rpc.WrapperServiceProxyFactory;
 public class WrapperServiceProxyFactoryTest {
 
 	public static interface TestService {
-		String hello(String name, String content);
+		String hello(String name, String content)throws TestExeception;
 	}
 
 	public static class TestServiceImpl implements TestService {
@@ -26,6 +27,15 @@ public class WrapperServiceProxyFactoryTest {
 			return "hello world:" + name + "," + content;
 		}
 
+	}
+	
+	class TestExeception extends Exception{
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -6878525567920345651L;
+		
 	}
 
 	@Test
@@ -41,6 +51,9 @@ public class WrapperServiceProxyFactoryTest {
 			wrapperService = wrapperServiceProxyFactory.newServerWrapperService(testService, hello);
 			result = wrapperService.invoke(parma);
 			System.out.println(result);
+			NettyRpcCilent client = new NettyRpcCilent();
+			TestService testServiceClient=wrapperServiceProxyFactory.newClientInterfaceWrapperInstance(client,"127.0.0.1", 80, TestService.class, null);
+			System.out.println(testServiceClient);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

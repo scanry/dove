@@ -25,12 +25,12 @@ public class RpcClientTest{
 		CountDownLatch cdl = new CountDownLatch(requestCount);
 		String name = "six";
 		ExecutorService executor = Executors.newFixedThreadPool(20);
+		TestService testServiceSyn = client.lookupService(targetHost, targetPort, TestService.class);
+		TestService testService = client.lookupService(targetHost, targetPort, TestService.class, result -> {
+			System.out.println("result:" + result);
+			cdl.countDown();
+		});
 		for (int i = 0; i < requestCount; i++) {
-			TestService testService = client.lookupService(targetHost, targetPort, TestService.class, result -> {
-				System.out.println("result:" + result);
-				cdl.countDown();
-			});
-			TestService testServiceSyn = client.lookupService(targetHost, targetPort, TestService.class);
 			try {
 				long startTime = System.currentTimeMillis();
 				Object result = testServiceSyn.say(name);
@@ -42,7 +42,7 @@ public class RpcClientTest{
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				cdl.countDown();
+				//cdl.countDown();
 			}
 			executor.execute(() -> {
 				try {

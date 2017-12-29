@@ -11,7 +11,6 @@ import six.com.rpc.protocol.RpcResponse;
  */
 public interface RpcClient {
 
-
 	/**
 	 * 执行请求
 	 * 
@@ -20,7 +19,6 @@ public interface RpcClient {
 	 */
 	public RpcResponse execute(RpcRequest RPCRequest);
 
-	
 	/**
 	 * 
 	 * <p>
@@ -45,8 +43,8 @@ public interface RpcClient {
 	 */
 	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, AsyCallback callback);
 
-	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz );
-	
+	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz);
+
 	/**
 	 * 获取call 超时时间
 	 * 
@@ -60,6 +58,6 @@ public interface RpcClient {
 	 * @param connection
 	 */
 	public void removeConnection(ClientToServerConnection connection);
-	
+
 	void shutdown();
 }

@@ -2,6 +2,8 @@ package six.com.rpc;
 
 import java.lang.reflect.Method;
 
+import six.com.rpc.client.AbstractClient;
+
 /**
  * @author sixliu
  * @date 2017年12月28日
@@ -10,6 +12,10 @@ import java.lang.reflect.Method;
  */
 public interface WrapperServiceProxyFactory {
 
+	@FunctionalInterface
+	interface BuildCode {
+		String buildCode();
+	}
 	/**
 	 * 构建rpc服务端包装 service
 	 * 
@@ -28,5 +34,5 @@ public interface WrapperServiceProxyFactory {
 	 *            协议接口class
 	 * @return 接口包装实例
 	 */
-	<T> T newClientInterfaceWrapperInstance(RpcClient rpcClient,String targetHost, int targetPort,Class<?> clz,AsyCallback asyCallback);
+	<T> T newClientInterfaceWrapperInstance(AbstractClient rpcClient,String targetHost, int targetPort,Class<?> clz,AsyCallback asyCallback);
 }

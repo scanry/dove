@@ -36,10 +36,9 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import six.com.rpc.AsyCallback;
-import six.com.rpc.RpcClient;
 import six.com.rpc.WrapperService;
 import six.com.rpc.WrapperServiceProxyFactory;
-import six.com.rpc.protocol.RpcRequest;
+import six.com.rpc.client.AbstractClient;
 
 /**
  * @author sixliu
@@ -68,10 +67,10 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 	@Override
 	public WrapperService newServerWrapperService(Object instance, Method instanceMethod) {
 		String packageName = instance.getClass().getPackage().getName();
-		String className = buildServerSerbviceClassName(instance, instanceMethod);
+		String className = buildServerServiceClassName(instance, instanceMethod);
 		WrapperService wrapperService = null;
 		try {
-			Class<?> clz = findClass(packageName, className,()->{
+			Class<?> clz = findClass(packageName, className, () -> {
 				return buildServerWrapperServiceCode(packageName, className, instance, instanceMethod);
 			});
 			Constructor<?> constructor = clz.getConstructor(instance.getClass());
@@ -81,34 +80,35 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T newClientInterfaceWrapperInstance(RpcClient rpcClient,String targetHost, int targetPort,Class<?> clz,AsyCallback asyCallback) {
+	public <T> T newClientInterfaceWrapperInstance(AbstractClient rpcClient, String targetHost, int targetPort,
+			Class<?> clz, AsyCallback asyCallback) {
 		String packageName = clz.getPackage().getName();
 		String className = buildClientInterfaceWrapperClassName(clz);
 		T t = null;
 		try {
-			Class<?> WrapperClass = findClass(packageName, className,()->{
-				return buildClientInterfaceWrapperCode(rpcClient, targetHost, targetPort, packageName, className, clz, asyCallback);
+			Class<?> WrapperClass = findClass(packageName, className, () -> {
+				return buildClientInterfaceWrapperCode(rpcClient, targetHost, targetPort, packageName, className, clz,
+						asyCallback);
 			});
-			Constructor<?> constructor = WrapperClass.getConstructor(RpcClient.class);
-			t = (T) constructor.newInstance(rpcClient);
+			Constructor<?> constructor = WrapperClass.getConstructor(AbstractClient.class, AsyCallback.class);
+			t = (T) constructor.newInstance(rpcClient, asyCallback);
 			return t;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private Class<?> findClass(String packageName, String className,BuildCode buildCode)
-			throws Exception {
+	private Class<?> findClass(String packageName, String className, BuildCode buildCode) throws Exception {
 		String classfullName = packageName + "." + className;
 		Class<?> clz = proxyClassLoad.loadClass(classfullName);
 		if (null == clz) {
 			synchronized (proxyClassLoad) {
 				clz = proxyClassLoad.loadClass(classfullName);
 				if (null == clz) {
-					String code=buildCode.buildCode();
+					String code = buildCode.buildCode();
 					clz = compile(packageName, classfullName, className, code, this.getClass().getClassLoader());
 				}
 			}
@@ -116,15 +116,11 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 		return clz;
 	}
 
-	@FunctionalInterface
-	interface BuildCode{
-		String buildCode();
-	}
-	private static String buildServerSerbviceClassName(Object instance, Method instanceMethod) {
+	private static String buildServerServiceClassName(Object instance, Method instanceMethod) {
 		StringBuilder classSb = new StringBuilder();
 		String instanceName = instance.getClass().getSimpleName();
 		String instanceMethodName = instanceMethod.getName();
-		classSb.append("Proxy$");
+		classSb.append("RpcServerServiceProxy$");
 		classSb.append(instanceName).append("$");
 		classSb.append(instanceMethodName);
 		Parameter[] parameter = instanceMethod.getParameters();
@@ -142,13 +138,12 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 		}
 		return classSb.toString();
 	}
-	
+
 	private static String buildClientInterfaceWrapperClassName(Class<?> clz) {
 		StringBuilder classSb = new StringBuilder();
 		String instanceName = clz.getSimpleName();
-		classSb.append("Proxy$");
-		classSb.append(instanceName).append("$");
-		classSb.append(System.currentTimeMillis());
+		classSb.append("RpcClientInterfaceProxy$");
+		classSb.append(instanceName);
 		return classSb.toString();
 	}
 
@@ -167,7 +162,8 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 		return proxyClassLoad.loadClass(classfullName);
 	}
 
-	private String buildServerWrapperServiceCode(String packageName, String className, Object instance, Method instanceMethod) {
+	private String buildServerWrapperServiceCode(String packageName, String className, Object instance,
+			Method instanceMethod) {
 		String method = instanceMethod.getName();
 		String instanceType = instance.getClass().getCanonicalName();
 		Parameter[] parameter = instanceMethod.getParameters();
@@ -198,31 +194,85 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 		clz.append("}\n");
 		return clz.toString();
 	}
-	
-	private String buildClientInterfaceWrapperCode(RpcClient rpcClient,String targetHost, int targetPort,String packageName, String className, Class<?> clz,AsyCallback asyCallback) {
-		String importClass=rpcClient.getClass().getCanonicalName();
-		String returnType=null;
+
+	private String buildClientInterfaceWrapperCode(AbstractClient rpcClient, String targetHost, int targetPort,
+			String packageName, String className, Class<?> clz, AsyCallback asyCallback) {
+		String interfaceName = clz.getCanonicalName();
+		String importClass = AbstractClient.class.getCanonicalName();
 		StringBuilder clzSb = new StringBuilder();
 		clzSb.append("package ").append(packageName).append(";\n");
 		clzSb.append("import ").append(importClass).append(";\n");
 		clzSb.append("import six.com.rpc.protocol.RpcRequest").append(";\n");
-		clzSb.append("public class ").append(className).append(" implements six.com.rpc.WrapperService {\n");
+		clzSb.append("import six.com.rpc.protocol.RpcResponse").append(";\n");
+		clzSb.append("import six.com.rpc.AsyCallback").append(";\n");
+		clzSb.append("import ").append(interfaceName).append(";\n");
+		clzSb.append("public class ").append(className).append(" implements " + interfaceName + " {\n");
 		clzSb.append("	private ").append(importClass).append(" rpcClient;\n");
-		clzSb.append("	public " + className + "(").append(importClass).append(" rpcClient").append("){\n");
-		clzSb.append("		this.instance=instance;\n");
+		clzSb.append("	private six.com.rpc.AsyCallback asyCallback;\n");
+		clzSb.append("	public " + className + "(").append(importClass)
+				.append(" rpcClient,six.com.rpc.AsyCallback asyCallback").append("){\n");
+		clzSb.append("		this.rpcClient=rpcClient;\n");
+		clzSb.append("		this.asyCallback=asyCallback;\n");
 		clzSb.append("	}\n");
-		clzSb.append("	@Override\n");
-		clzSb.append("	public "+returnType+" invoke(Object[] paras)throws Exception{\n");
-		clzSb.append("	       String serviceName = getServiceName(clz.getName(), method.getName());\n");
-		clzSb.append("	       RpcRequest rpcRequest = new RpcRequest();\n");
-		clzSb.append("	       rpcRequest.setId(requestId);\n");
-		clzSb.append("	       rpcRequest.setCommand(serviceName);\n");
-		clzSb.append("	       rpcRequest.setCallHost(targetHost);\n");
-		clzSb.append("	       rpcRequest.setCallPort(targetPort);\n");
-		clzSb.append("	       rpcRequest.setParams(args);\n");
-		clzSb.append("	       rpcRequest.setAsyCallback(asyCallback);\n");
-		clzSb.append("	       rpcClient.execute(rpcRequest);\n");
-		clzSb.append("	}\n");
+
+		Method[] methods = clz.getMethods();
+		String methodName = null;
+		String returnType = null;
+		String invokePamasStr = "";
+		Parameter[] parameter = null;
+		StringBuilder args = new StringBuilder();
+		StringBuilder throwsException = new StringBuilder();
+		Class<?>[] throwsExceptionType = null;
+		String serviceName = null;
+		String requestId = null;
+		for (Method method : methods) {
+			methodName = method.getName();
+			returnType = method.getReturnType().getCanonicalName();
+			parameter = method.getParameters();
+
+			if (null != parameter && parameter.length > 0) {
+				String parameterTypeName = null;
+				StringBuilder invokePamasSb = new StringBuilder();
+				args.append("	       Object[] args=new Object[" + parameter.length + "];\n");
+				for (int i = 0, size = parameter.length; i < size; i++) {
+					parameterTypeName = parameter[i].getParameterizedType().getTypeName();
+					invokePamasSb.append(parameterTypeName).append(" paras" + i).append(",");
+					args.append("	       args[" + i + "]=paras" + i + ";\n");
+				}
+				args.append("	       rpcRequest.setParams(args);\n");
+				invokePamasSb.deleteCharAt(invokePamasSb.length() - 1);
+				invokePamasStr = invokePamasSb.toString();
+			} else {
+				args.append("	       rpcRequest.setParams(null);\n");
+			}
+			throwsExceptionType = method.getExceptionTypes();
+			if (null != throwsExceptionType && throwsExceptionType.length > 0) {
+				throwsException.append("throws ");
+				for (int i = 0, size = throwsExceptionType.length; i < size; i++) {
+					throwsException.append(throwsExceptionType[i].getCanonicalName() + ",");
+				}
+				throwsException.deleteCharAt(throwsException.length() - 1);
+			}
+			serviceName = rpcClient.getServiceName(interfaceName, method);
+			requestId = rpcClient.createRequestId(targetHost, targetPort, serviceName);
+			clzSb.append("	@Override\n");
+			clzSb.append("	public " + returnType + " " + methodName + "(" + invokePamasStr + ")" + throwsException
+					+ "{\n");
+			clzSb.append("	       RpcRequest rpcRequest = new RpcRequest();\n");
+			clzSb.append("	       rpcRequest.setId(\"" + requestId + "\");\n");
+			clzSb.append("	       rpcRequest.setCommand(\"" + serviceName + "\");\n");
+			clzSb.append("	       rpcRequest.setCallHost(\"" + targetHost + "\");\n");
+			clzSb.append("	       rpcRequest.setCallPort(" + targetPort + ");\n");
+			clzSb.append(args);
+			clzSb.append("	       rpcRequest.setAsyCallback(asyCallback);\n");
+			clzSb.append("	       RpcResponse rpcResponse = rpcClient.execute(rpcRequest);\n");
+			clzSb.append("	       if (null == asyCallback) {\n");
+			clzSb.append("	       		return (" + returnType + ")rpcResponse.getResult();\n");
+			clzSb.append("	       }else{\n");
+			clzSb.append("	       		return null;\n");
+			clzSb.append("	       }\n");
+			clzSb.append("	}\n");
+		}
 		clzSb.append("}\n");
 		return clzSb.toString();
 	}
@@ -387,7 +437,5 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 			return files;
 		}
 	}
-
-	
 
 }
