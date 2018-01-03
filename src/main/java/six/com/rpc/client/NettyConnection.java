@@ -1,6 +1,5 @@
 package six.com.rpc.client;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,12 +80,15 @@ public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg
 	public long getLastActivityTime() {
 		return lastActivityTime;
 	}
-	
+
 	public void close() {
 		if (null != ctx) {
 			ctx.close();
 		}
+		doClose();
 	}
+
+	protected abstract void doClose();
 
 	public void disconnect() {
 		if (null != ctx) {

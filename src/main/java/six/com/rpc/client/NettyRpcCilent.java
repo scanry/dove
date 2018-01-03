@@ -151,10 +151,18 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 
 	@Override
 	public RpcResponse execute(RpcRequest rpcRequest) {
-		WrapperFuture wrapperFuture = doExecute(rpcRequest);
+		ClientToServerConnection clientToServerConnection = findHealthyNettyConnection(rpcRequest);
+		WrapperFuture wrapperFuture = null;
+		try {
+			wrapperFuture = clientToServerConnection.send(rpcRequest, callTimeout);
+		} catch (Exception e) {
+			clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
+			throw new RpcClientException(e);
+		}
 		if (!wrapperFuture.hasAsyCallback()) {
 			RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
 			if (null == rpcResponse) {
+				clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
 				throw new RpcTimeoutException(
 						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + callTimeout + "]");
 			} else if (rpcResponse.getStatus() == RpcResponseStatus.UNFOUND_SERVICE) {
@@ -168,15 +176,6 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 			}
 		} else {
 			return null;
-		}
-	}
-
-	private WrapperFuture doExecute(RpcRequest rpcRequest) {
-		ClientToServerConnection clientToServerConnection = findHealthyNettyConnection(rpcRequest);
-		try {
-			return clientToServerConnection.send(rpcRequest, callTimeout);
-		} catch (Exception e) {
-			throw new RpcClientException(e);
 		}
 	}
 

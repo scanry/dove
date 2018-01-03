@@ -37,7 +37,7 @@ public class ClientToServerConnection extends NettyConnection {
 	protected void channelRead0(ChannelHandlerContext ctx, RpcMsg msg) throws Exception {
 		if (msg instanceof RpcResponse) {
 			RpcResponse rpcResponse = (RpcResponse) msg;
-			WrapperFuture wrapperRPCRequest = requestMap.remove(rpcResponse.getId());
+			WrapperFuture wrapperRPCRequest =removeWrapperFuture(rpcResponse.getId());
 			if (null != wrapperRPCRequest) {
 				wrapperRPCRequest.onComplete(rpcResponse, System.currentTimeMillis());
 				log.debug("client received rpcResponse from rpcRequest[" + wrapperRPCRequest.getRPCRequest().toString()
@@ -59,7 +59,7 @@ public class ClientToServerConnection extends NettyConnection {
 	public WrapperFuture send(RpcRequest rpcRequest,long timeout) {
 		WrapperFuture wrapperFuture = new WrapperFuture(rpcRequest);
 		wrapperFuture.setSendTime(System.currentTimeMillis());
-		requestMap.put(rpcRequest.getId(), wrapperFuture);
+		putWrapperFuture(rpcRequest.getId(), wrapperFuture);
 		ChannelFuture channelFuture = super.writeAndFlush(rpcRequest);
 		boolean result = channelFuture.awaitUninterruptibly(timeout);
 		if (result) {
@@ -70,7 +70,7 @@ public class ClientToServerConnection extends NettyConnection {
 						log.debug("send rpcRequest successed");
 					} else {
 						wrapperFuture.onComplete(null, System.currentTimeMillis());
-						requestMap.remove(rpcRequest.getId());
+						removeWrapperFuture(rpcRequest.getId());
 						log.debug("send rpcRequest failed");
 					}
 				}
@@ -78,10 +78,23 @@ public class ClientToServerConnection extends NettyConnection {
 		}
 		return wrapperFuture;
 	}
+	
+	public void putWrapperFuture(String rpcRequestId,WrapperFuture wrapperFuture) {
+		requestMap.put(rpcRequestId, wrapperFuture);
+	}
+	
+	public WrapperFuture removeWrapperFuture(String rpcRequestId) {
+		return requestMap.remove(rpcRequestId);
+	}
 
 	@Override
 	protected void doConnect() {
 		this.rpcCilent.removeConnection(this);
+	}
+
+	@Override
+	protected void doClose() {
+		requestMap.clear();
 	}
 
 }
