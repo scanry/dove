@@ -1,6 +1,7 @@
 package six.com.rpc.server;
 
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -78,6 +79,8 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 
 	private boolean useEpoll;
 
+	private Thread startThread;
+
 	public NettyRpcServer(String loaclHost, int trafficPort) {
 		this(loaclHost, trafficPort, 0, 0, 0);
 	}
@@ -140,12 +143,8 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 					}
 				});
 		serverBootstrap = new ServerBootstrap();
-		wrapperServiceProxyFactory = new JavaWrapperServiceProxyFactory();
-	}
-
-	@Override
-	public void start() {
 		serverBootstrap.group(bossGroup, workerIoGroup)
+				.localAddress(new InetSocketAddress(NettyRpcServer.this.loaclHost, NettyRpcServer.this.trafficPort))
 				.channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
 				.childHandler(new ChannelInitializer<SocketChannel>() {
 					@Override
@@ -160,34 +159,38 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 				}).option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
 				.childOption(ChannelOption.SO_KEEPALIVE, false).option(ChannelOption.TCP_NODELAY, true)
 				.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-		try {
-			Channel ch = serverBootstrap.bind(NettyRpcServer.this.loaclHost, NettyRpcServer.this.trafficPort).sync()
-					.channel();
-			ch.closeFuture().sync();
-		} catch (InterruptedException e) {
-			log.error("netty serverBootstrap err", e);
-		} finally {
-			workerIoGroup.shutdownGracefully();
-			bossGroup.shutdownGracefully();
-		}
+		startThread = new Thread(() -> {
+			try {
+				ChannelFuture sync = serverBootstrap.bind().sync();
+				sync.channel().closeFuture().sync();
+			} catch (InterruptedException e) {
+				log.error("netty serverBootstrap err", e);
+			} finally {
+				workerIoGroup.shutdownGracefully();
+				bossGroup.shutdownGracefully();
+			}
+		}, "netty-start-thread");
+
 	}
 
 	@Override
-	public void register(Class<?> protocol, Object instance) {
+	public void start() {
+		startThread.start();
+	}
+
+	@Override
+	public <T, I extends T> void register(Class<T> protocol, I instance) {
 		register(defaultBizExecutorService, protocol, instance);
 	}
 
 	@Override
-	public void register(ExecutorService bizExecutorService, Class<?> protocol, Object instance) {
+	public <T, I extends T> void register(ExecutorService bizExecutorService, Class<T> protocol, I instance) {
 		Objects.requireNonNull(bizExecutorService, "bizExecutorService must not be null");
+		Objects.requireNonNull(protocol, "protocol must not be null");
 		Objects.requireNonNull(instance, "instance must not be null");
-		if (null == protocol) {
-			protocol = instance.getClass();
-		} else {
-			if (!protocol.isAssignableFrom(instance.getClass())) {
-				throw new RuntimeException("protocolClass " + protocol.getName()
-						+ " is not implemented by protocolImpl which is of class " + instance.getClass());
-			}
+		if (!protocol.isAssignableFrom(instance.getClass())) {
+			throw new RuntimeException("protocolClass " + protocol.getName()
+					+ " is not implemented by protocolImpl which is of class " + instance.getClass());
 		}
 		String protocolName = protocol.getName();
 		Method[] protocolMethods = protocol.getMethods();
@@ -198,6 +201,17 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 			registerMap.put(serviceName, new WrapperServiceTuple(wrapperService, defaultBizExecutorService));
 		}
 
+	}
+
+	@Override
+	public void unregister(Class<?> protocol) {
+		Objects.requireNonNull(protocol, "protocol must not be null");
+		String protocolName = protocol.getName();
+		Method[] protocolMethods = protocol.getMethods();
+		for (Method protocolMethod : protocolMethods) {
+			final String serviceName = getServiceName(protocolName, protocolMethod);
+			registerMap.remove(serviceName);
+		}
 	}
 
 	@Override

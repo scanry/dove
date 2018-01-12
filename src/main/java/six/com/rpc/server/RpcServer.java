@@ -27,9 +27,12 @@ public interface RpcServer {
 	 * @param tagetOb
 	 *            必须有值 否则抛运行时异常
 	 */
-	public void register(Class<?> protocol, Object instance);
+	public <T,I extends T>void register(Class<T> protocol, I instance);
 
-	public void register(ExecutorService bizExecutorService, Class<?> protocol, Object instance);
+	public <T,I extends T>void register(ExecutorService bizExecutorService, Class<T> protocol, I instance);
+	
+	
+	public void unregister(Class<?> protocol);
 
 	/**
 	 * 通过rpcServiceName 获取 RpcService

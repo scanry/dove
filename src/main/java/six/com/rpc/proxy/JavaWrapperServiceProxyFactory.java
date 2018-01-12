@@ -187,9 +187,15 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 			}
 			invokePamasSb.deleteCharAt(invokePamasSb.length() - 1);
 			invokePamasStr = invokePamasSb.toString();
+		}		
+		if (hasReturnType(instanceMethod)) {
+			clz.append("		return this.instance.").append(method);
+			clz.append("(").append(invokePamasStr).append(");\n");
+		} else {
+			clz.append("		this.instance.").append(method);
+			clz.append("(").append(invokePamasStr).append(");\n");
+			clz.append("		return null;");
 		}
-		clz.append("		return this.instance.").append(method);
-		clz.append("(").append(invokePamasStr).append(");\n");
 		clz.append("	}\n");
 		clz.append("}\n");
 		return clz.toString();
@@ -275,6 +281,15 @@ public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactor
 		}
 		clzSb.append("}\n");
 		return clzSb.toString();
+	}
+
+	static boolean hasReturnType(Method instanceMethod) {
+		if (null != instanceMethod.getReturnType() && Void.class != instanceMethod.getReturnType()
+				&& !"void".equals(instanceMethod.getReturnType().getName())) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	static class ProxyClassLoad extends ClassLoader {
