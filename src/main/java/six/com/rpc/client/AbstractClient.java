@@ -2,7 +2,7 @@ package six.com.rpc.client;
 
 import six.com.rpc.AbstractRemote;
 import six.com.rpc.RpcClient;
-import six.com.rpc.WrapperServiceProxyFactory;
+import six.com.rpc.RemoteInvokeProxyFactory;
 import six.com.rpc.protocol.RpcSerialize;
 
 /**
@@ -13,8 +13,7 @@ import six.com.rpc.protocol.RpcSerialize;
  */
 public abstract class AbstractClient extends AbstractRemote implements RpcClient {
 
-	public AbstractClient(WrapperServiceProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize) {
+	public AbstractClient(RemoteInvokeProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize) {
 		super(wrapperServiceProxyFactory, rpcSerialize);
 	}
-
 }

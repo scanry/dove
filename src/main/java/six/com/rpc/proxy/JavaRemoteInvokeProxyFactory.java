@@ -37,7 +37,7 @@ import javax.tools.ToolProvider;
 
 import six.com.rpc.AsyCallback;
 import six.com.rpc.WrapperService;
-import six.com.rpc.WrapperServiceProxyFactory;
+import six.com.rpc.RemoteInvokeProxyFactory;
 import six.com.rpc.client.AbstractClient;
 
 /**
@@ -46,14 +46,14 @@ import six.com.rpc.client.AbstractClient;
  * @email 359852326@qq.com
  * @Description
  */
-public class JavaWrapperServiceProxyFactory implements WrapperServiceProxyFactory {
+public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 
 	private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 	private final DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
 	private final JavaFileManagerImpl javaFileManager;
 	private ProxyClassLoad proxyClassLoad;
 
-	public JavaWrapperServiceProxyFactory() {
+	public JavaRemoteInvokeProxyFactory() {
 		StandardJavaFileManager manager = compiler.getStandardFileManager(diagnosticCollector, null, null);
 		final ClassLoader loader = Thread.currentThread().getContextClassLoader();
 		proxyClassLoad = AccessController.doPrivileged(new PrivilegedAction<ProxyClassLoad>() {

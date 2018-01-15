@@ -30,12 +30,12 @@ import io.netty.util.NettyRuntime;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import six.com.rpc.NettyConstant;
 import six.com.rpc.WrapperService;
-import six.com.rpc.WrapperServiceProxyFactory;
+import six.com.rpc.RemoteInvokeProxyFactory;
 import six.com.rpc.WrapperServiceTuple;
 import six.com.rpc.protocol.RpcDecoder;
 import six.com.rpc.protocol.RpcEncoder;
 import six.com.rpc.protocol.RpcSerialize;
-import six.com.rpc.proxy.JavaWrapperServiceProxyFactory;
+import six.com.rpc.proxy.JavaRemoteInvokeProxyFactory;
 
 /**
  * @author 作者
@@ -87,11 +87,11 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 
 	public NettyRpcServer(String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads,
 			int workerBizThreads) {
-		this(new JavaWrapperServiceProxyFactory(), new RpcSerialize() {
+		this(new JavaRemoteInvokeProxyFactory(), new RpcSerialize() {
 		}, loaclHost, trafficPort, workerIoThreads, workerCodeThreads, workerBizThreads);
 	}
 
-	public NettyRpcServer(WrapperServiceProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
+	public NettyRpcServer(RemoteInvokeProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
 			String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads, int workerBizThreads) {
 		super(wrapperServiceProxyFactory, rpcSerialize);
 		this.loaclHost = loaclHost;
@@ -197,7 +197,7 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 		WrapperService wrapperService = null;
 		for (Method protocolMethod : protocolMethods) {
 			final String serviceName = getServiceName(protocolName, protocolMethod);
-			wrapperService = getWrapperServiceProxyFactory().newServerWrapperService(instance, protocolMethod);
+			wrapperService = getRemoteInvokeProxyFactory().newServerWrapperService(instance, protocolMethod);
 			registerMap.put(serviceName, new WrapperServiceTuple(wrapperService, defaultBizExecutorService));
 		}
 

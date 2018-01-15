@@ -15,7 +15,7 @@ import six.com.rpc.protocol.RpcSerialize;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月10日 上午11:20:06
  */
-public class AbstractRemote implements Remote {
+public abstract class AbstractRemote implements Remote {
 
 	private static String MAC;
 	private static String PID;
@@ -25,24 +25,22 @@ public class AbstractRemote implements Remote {
 		PID = getPid();
 	}
 
-
 	private static AtomicInteger requestIndex = new AtomicInteger(0);
 	private RpcSerialize rpcSerialize;
-	private WrapperServiceProxyFactory wrapperServiceProxyFactory;
+	private RemoteInvokeProxyFactory remoteInvokeProxyFactory;
 
-	public AbstractRemote(WrapperServiceProxyFactory wrapperServiceProxyFactory,RpcSerialize rpcSerialize) {
-		Objects.requireNonNull(wrapperServiceProxyFactory);
+	public AbstractRemote(RemoteInvokeProxyFactory remoteInvokeProxyFactory, RpcSerialize rpcSerialize) {
+		Objects.requireNonNull(remoteInvokeProxyFactory);
 		Objects.requireNonNull(rpcSerialize);
-		this.wrapperServiceProxyFactory = wrapperServiceProxyFactory;
+		this.remoteInvokeProxyFactory = remoteInvokeProxyFactory;
 		this.rpcSerialize = rpcSerialize;
 	}
 
-	
 	@Override
-	public WrapperServiceProxyFactory getWrapperServiceProxyFactory() {
-		return wrapperServiceProxyFactory;
+	public RemoteInvokeProxyFactory getRemoteInvokeProxyFactory() {
+		return remoteInvokeProxyFactory;
 	}
-	
+
 	@Override
 	public RpcSerialize getRpcSerialize() {
 		return rpcSerialize;
@@ -77,7 +75,7 @@ public class AbstractRemote implements Remote {
 		}
 		return serviceName.toString();
 	}
-	
+
 	private static String getLocalMac() {
 		String mac = "";
 		try {

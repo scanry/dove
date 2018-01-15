@@ -9,7 +9,7 @@ import six.com.rpc.protocol.RpcSerialize;
  */
 public interface Remote {
 
-	WrapperServiceProxyFactory getWrapperServiceProxyFactory();
+	RemoteInvokeProxyFactory getRemoteInvokeProxyFactory();
 
 	RpcSerialize getRpcSerialize();
 }

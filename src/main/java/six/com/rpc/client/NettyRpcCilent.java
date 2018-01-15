@@ -18,7 +18,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import six.com.rpc.AsyCallback;
 import six.com.rpc.NettyConstant;
 import six.com.rpc.RpcClient;
-import six.com.rpc.WrapperServiceProxyFactory;
+import six.com.rpc.RemoteInvokeProxyFactory;
 import six.com.rpc.exception.RpcClientException;
 import six.com.rpc.exception.RpcInvokeException;
 import six.com.rpc.exception.RpcNotFoundServiceException;
@@ -30,7 +30,7 @@ import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.protocol.RpcResponse;
 import six.com.rpc.protocol.RpcResponseStatus;
 import six.com.rpc.protocol.RpcSerialize;
-import six.com.rpc.proxy.JavaWrapperServiceProxyFactory;
+import six.com.rpc.proxy.JavaRemoteInvokeProxyFactory;
 
 /**
  * @author 作者
@@ -90,11 +90,11 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	}
 
 	public NettyRpcCilent(int workerGroupThreads) {
-		this(new JavaWrapperServiceProxyFactory(), new RpcSerialize() {
+		this(new JavaRemoteInvokeProxyFactory(), new RpcSerialize() {
 		}, workerGroupThreads);
 	}
 
-	public NettyRpcCilent(WrapperServiceProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
+	public NettyRpcCilent(RemoteInvokeProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
 			int workerGroupThreads) {
 		super(wrapperServiceProxyFactory, rpcSerialize);
 		workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);
@@ -105,7 +105,7 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	@Override
 	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, final AsyCallback asyCallback) {
 		checkParma(targetHost, targetPort, clz);
-		return getWrapperServiceProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
+		return getRemoteInvokeProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
 				asyCallback);
 	}
 
@@ -114,7 +114,7 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 		checkParma(targetHost, targetPort, clz);
 		String key = serviceKey(targetHost, targetPort, clz);
 		Object service = serviceWeakHashMap.computeIfAbsent(key, mapkey -> {
-			return getWrapperServiceProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
+			return getRemoteInvokeProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
 					null);
 		});
 		return (T) service;
@@ -241,12 +241,11 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	public void removeConnection(ClientToServerConnection connection) {
 		pool.remove(connection);
 	}
-
+	
 	@Override
 	public void shutdown() {
 		if (null != workerGroup) {
 			workerGroup.shutdownGracefully();
 		}
 	}
-
 }

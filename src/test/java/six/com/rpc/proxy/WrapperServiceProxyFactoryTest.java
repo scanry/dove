@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import org.junit.Test;
 
 import six.com.rpc.WrapperService;
-import six.com.rpc.WrapperServiceProxyFactory;
+import six.com.rpc.RemoteInvokeProxyFactory;
 import six.com.rpc.client.NettyRpcCilent;
 
 /**
@@ -41,7 +41,7 @@ public class WrapperServiceProxyFactoryTest {
 	@Test
 	public void test() {
 		String[] parma = new String[] { "sixliu", "welcome you" };
-		WrapperServiceProxyFactory wrapperServiceProxyFactory = new JavaWrapperServiceProxyFactory();
+		RemoteInvokeProxyFactory wrapperServiceProxyFactory = new JavaRemoteInvokeProxyFactory();
 		TestServiceImpl testService = new TestServiceImpl();
 		Object result = null;
 		try {

@@ -10,7 +10,7 @@ import six.com.rpc.client.AbstractClient;
  * @email 359852326@qq.com
  * @Description
  */
-public interface WrapperServiceProxyFactory {
+public interface RemoteInvokeProxyFactory {
 
 	@FunctionalInterface
 	interface BuildCode {
