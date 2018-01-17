@@ -19,7 +19,7 @@ import six.com.rpc.AsyCallback;
 import six.com.rpc.NettyConstant;
 import six.com.rpc.RpcClient;
 import six.com.rpc.RemoteInvokeProxyFactory;
-import six.com.rpc.exception.RpcClientException;
+import six.com.rpc.exception.RpcException;
 import six.com.rpc.exception.RpcInvokeException;
 import six.com.rpc.exception.RpcNotFoundServiceException;
 import six.com.rpc.exception.RpcRejectServiceException;
@@ -157,7 +157,7 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 			wrapperFuture = clientToServerConnection.send(rpcRequest, callTimeout);
 		} catch (Exception e) {
 			clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
-			throw new RpcClientException(e);
+			throw new RpcException(e);
 		}
 		if (!wrapperFuture.hasAsyCallback()) {
 			RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
