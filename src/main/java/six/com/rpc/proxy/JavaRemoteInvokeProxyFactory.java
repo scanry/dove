@@ -226,12 +226,12 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 		String returnType = null;
 		String invokePamasStr = "";
 		Parameter[] parameter = null;
-		StringBuilder args = new StringBuilder();
 		StringBuilder throwsException = new StringBuilder();
 		Class<?>[] throwsExceptionType = null;
 		String serviceName = null;
 		String requestId = null;
 		for (Method method : methods) {
+			StringBuilder args = new StringBuilder();
 			methodName = method.getName();
 			returnType = method.getReturnType().getCanonicalName();
 			parameter = method.getParameters();
@@ -272,11 +272,13 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 			clzSb.append(args);
 			clzSb.append("	       rpcRequest.setAsyCallback(asyCallback);\n");
 			clzSb.append("	       RpcResponse rpcResponse = rpcClient.execute(rpcRequest);\n");
-			clzSb.append("	       if (null == asyCallback) {\n");
-			clzSb.append("	       		return (" + returnType + ")rpcResponse.getResult();\n");
-			clzSb.append("	       }else{\n");
-			clzSb.append("	       		return null;\n");
-			clzSb.append("	       }\n");
+			if (hasReturnType(method)) {
+				clzSb.append("	       if (null == asyCallback) {\n");
+				clzSb.append("	       		return (" + returnType + ")rpcResponse.getResult();\n");
+				clzSb.append("	       }else{\n");
+				clzSb.append("	       		return null;\n");
+				clzSb.append("	       }\n");
+			}
 			clzSb.append("	}\n");
 		}
 		clzSb.append("}\n");

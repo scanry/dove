@@ -21,10 +21,10 @@ public class WrapperFuture {
 	private volatile RpcRequest rpcRequest;
 
 	private volatile RpcResponse rpcResponse;
-	
-	private AtomicBoolean executeAsyCallback=new AtomicBoolean(false);
 
-	private final CountDownLatch cdl=new CountDownLatch(1);
+	private AtomicBoolean executeAsyCallback = new AtomicBoolean(false);
+
+	private final CountDownLatch cdl = new CountDownLatch(1);
 
 	public WrapperFuture(RpcRequest rpcRequest) {
 		this.rpcRequest = rpcRequest;
@@ -50,27 +50,27 @@ public class WrapperFuture {
 		this.rpcResponse = response;
 		this.receiveTime = receiveTime;
 		cdl.countDown();
-		if(null!=rpcRequest.getAsyCallback()&&executeAsyCallback.compareAndSet(false, true)) {
+		if (null != rpcRequest.getAsyCallback() && null != response && executeAsyCallback.compareAndSet(false, true)) {
 			rpcRequest.getAsyCallback().execute(response.getResult());
 		}
 	}
 
-
 	public boolean hasAsyCallback() {
-		return null!=rpcRequest.getAsyCallback();
+		return null != rpcRequest.getAsyCallback();
 	}
-	
+
 	public RpcResponse getResult(long timeout) {
-		if (null!=rpcResponse) {
+		if (null != rpcResponse) {
 			return rpcResponse;
 		}
 		try {
-			if(timeout<=0){
+			if (timeout <= 0) {
 				cdl.await();
-			}else{
+			} else {
 				cdl.await(timeout, TimeUnit.MILLISECONDS);
 			}
-		} catch (InterruptedException e) {}
+		} catch (InterruptedException e) {
+		}
 		return rpcResponse;
 	}
 }
