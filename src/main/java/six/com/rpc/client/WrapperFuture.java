@@ -50,8 +50,8 @@ public class WrapperFuture {
 		this.rpcResponse = response;
 		this.receiveTime = receiveTime;
 		cdl.countDown();
-		if (null != rpcRequest.getAsyCallback() && null != response && executeAsyCallback.compareAndSet(false, true)) {
-			rpcRequest.getAsyCallback().execute(response.getResult());
+		if (null != rpcRequest.getAsyCallback()&& executeAsyCallback.compareAndSet(false, true)) {
+			rpcRequest.getAsyCallback().execute(response);
 		}
 	}
 

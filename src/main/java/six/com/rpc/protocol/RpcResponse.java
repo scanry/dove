@@ -6,20 +6,24 @@ import java.io.Serializable;
  * @author six
  * @date 2016年6月2日 下午4:15:17 rpc响应
  */
-public class RpcResponse extends RpcMsg implements Serializable{
+public class RpcResponse extends RpcMsg implements Serializable {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -7823438169107836197L;
 
-
 	// 响应结果
 	private Object result;
-	
+
 	private int status;
-	
+
 	private String msg;
+
+	public RpcResponse(int status) {
+		super(RpcProtocol.RESPONSE);
+		this.status = status;
+	}
 
 	public RpcResponse() {
 		super(RpcProtocol.RESPONSE);
@@ -32,6 +36,7 @@ public class RpcResponse extends RpcMsg implements Serializable{
 	public void setResult(Object result) {
 		this.result = result;
 	}
+
 	public int getStatus() {
 		return status;
 	}
@@ -47,5 +52,15 @@ public class RpcResponse extends RpcMsg implements Serializable{
 	public void setMsg(String msg) {
 		this.msg = msg;
 	}
+
+	public boolean isSuccessed() {
+		return status == RpcResponseStatus.SUCCEED;
+	}
+
+	public final static RpcResponse CONNECT_FAILED = new RpcResponse(RpcResponseStatus.CONNECT_FAILED);
 	
+	public final static RpcResponse SEND_FAILED = new RpcResponse(RpcResponseStatus.SEND_FAILED);
+
+	public final static RpcResponse TIME_OUT = new RpcResponse(RpcResponseStatus.TIMEOUT);
+
 }

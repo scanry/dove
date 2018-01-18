@@ -90,11 +90,12 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 		T t = null;
 		try {
 			Class<?> WrapperClass = findClass(packageName, className, () -> {
-				return buildClientInterfaceWrapperCode(rpcClient, targetHost, targetPort, packageName, className, clz,
+				return buildClientInterfaceWrapperCode(rpcClient,packageName, className, clz,
 						asyCallback);
 			});
-			Constructor<?> constructor = WrapperClass.getConstructor(AbstractClient.class, AsyCallback.class);
-			t = (T) constructor.newInstance(rpcClient, asyCallback);
+			Constructor<?> constructor = WrapperClass.getConstructor(AbstractClient.class, String.class, int.class,
+					AsyCallback.class);
+			t = (T) constructor.newInstance(rpcClient,targetHost, targetPort,asyCallback);
 			return t;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -187,7 +188,7 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 			}
 			invokePamasSb.deleteCharAt(invokePamasSb.length() - 1);
 			invokePamasStr = invokePamasSb.toString();
-		}		
+		}
 		if (hasReturnType(instanceMethod)) {
 			clz.append("		return this.instance.").append(method);
 			clz.append("(").append(invokePamasStr).append(");\n");
@@ -201,7 +202,7 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 		return clz.toString();
 	}
 
-	private String buildClientInterfaceWrapperCode(AbstractClient rpcClient, String targetHost, int targetPort,
+	private String buildClientInterfaceWrapperCode(AbstractClient rpcClient,
 			String packageName, String className, Class<?> clz, AsyCallback asyCallback) {
 		String interfaceName = clz.getCanonicalName();
 		String importClass = AbstractClient.class.getCanonicalName();
@@ -214,26 +215,31 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 		clzSb.append("import ").append(interfaceName).append(";\n");
 		clzSb.append("public class ").append(className).append(" implements " + interfaceName + " {\n");
 		clzSb.append("	private ").append(importClass).append(" rpcClient;\n");
+		clzSb.append("	private String callHost;\n");
+		clzSb.append("	private int    port;\n");
 		clzSb.append("	private six.com.rpc.AsyCallback asyCallback;\n");
 		clzSb.append("	public " + className + "(").append(importClass)
-				.append(" rpcClient,six.com.rpc.AsyCallback asyCallback").append("){\n");
+				.append(" rpcClient,String callHost,int port,six.com.rpc.AsyCallback asyCallback").append("){\n");
 		clzSb.append("		this.rpcClient=rpcClient;\n");
+		clzSb.append("		this.callHost=callHost;\n");
+		clzSb.append("		this.port=port;\n");
 		clzSb.append("		this.asyCallback=asyCallback;\n");
 		clzSb.append("	}\n");
 
 		Method[] methods = clz.getMethods();
 		String methodName = null;
-		String returnType = null;
+		Class<?> returnType = null;
+		String returnTypeCanonicalName = null;
 		String invokePamasStr = "";
 		Parameter[] parameter = null;
 		StringBuilder throwsException = new StringBuilder();
 		Class<?>[] throwsExceptionType = null;
 		String serviceName = null;
-		String requestId = null;
 		for (Method method : methods) {
 			StringBuilder args = new StringBuilder();
 			methodName = method.getName();
-			returnType = method.getReturnType().getCanonicalName();
+			returnType = method.getReturnType();
+			returnTypeCanonicalName = returnType.getCanonicalName();
 			parameter = method.getParameters();
 
 			if (null != parameter && parameter.length > 0) {
@@ -260,29 +266,49 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 				throwsException.deleteCharAt(throwsException.length() - 1);
 			}
 			serviceName = rpcClient.getServiceName(interfaceName, method);
-			requestId = rpcClient.createRequestId(targetHost, targetPort, serviceName);
 			clzSb.append("	@Override\n");
-			clzSb.append("	public " + returnType + " " + methodName + "(" + invokePamasStr + ")" + throwsException
-					+ "{\n");
+			clzSb.append("	public " + returnTypeCanonicalName + " " + methodName + "(" + invokePamasStr + ")"
+					+ throwsException + "{\n");
 			clzSb.append("	       RpcRequest rpcRequest = new RpcRequest();\n");
-			clzSb.append("	       rpcRequest.setId(\"" + requestId + "\");\n");
+			clzSb.append("	       String requestId=rpcClient.createRequestId(callHost, port,\""+serviceName+"\");\n");
+			clzSb.append("	       rpcRequest.setId(requestId);\n");
 			clzSb.append("	       rpcRequest.setCommand(\"" + serviceName + "\");\n");
-			clzSb.append("	       rpcRequest.setCallHost(\"" + targetHost + "\");\n");
-			clzSb.append("	       rpcRequest.setCallPort(" + targetPort + ");\n");
+			clzSb.append("	       rpcRequest.setCallHost(callHost);\n");
+			clzSb.append("	       rpcRequest.setCallPort(port);\n");
 			clzSb.append(args);
 			clzSb.append("	       rpcRequest.setAsyCallback(asyCallback);\n");
 			clzSb.append("	       RpcResponse rpcResponse = rpcClient.execute(rpcRequest);\n");
 			if (hasReturnType(method)) {
 				clzSb.append("	       if (null == asyCallback) {\n");
-				clzSb.append("	       		return (" + returnType + ")rpcResponse.getResult();\n");
+				clzSb.append("	       		return (" + returnTypeCanonicalName + ")rpcResponse.getResult();\n");
 				clzSb.append("	       }else{\n");
-				clzSb.append("	       		return null;\n");
+				if (returnType.isPrimitive()) {
+					clzSb.append("	       		return " + parser(returnType) + ";\n");
+				} else {
+					clzSb.append("	       		return null;\n");
+				}
 				clzSb.append("	       }\n");
 			}
 			clzSb.append("	}\n");
 		}
 		clzSb.append("}\n");
 		return clzSb.toString();
+	}
+
+	static Map<Class<?>, String> returnTypeCache = new HashMap<>();
+	static {
+		returnTypeCache.put(byte.class, "0");
+		returnTypeCache.put(char.class, "0");
+		returnTypeCache.put(short.class, "0");
+		returnTypeCache.put(int.class, "0");
+		returnTypeCache.put(long.class, "0");
+		returnTypeCache.put(float.class, "0");
+		returnTypeCache.put(double.class, "0");
+		returnTypeCache.put(boolean.class, "true");
+	}
+
+	private static String parser(Class<?> returnType) {
+		return returnTypeCache.get(returnType);
 	}
 
 	static boolean hasReturnType(Method instanceMethod) {

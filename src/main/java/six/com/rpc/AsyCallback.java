@@ -1,5 +1,7 @@
 package six.com.rpc;
 
+import six.com.rpc.protocol.RpcResponse;
+
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
@@ -16,5 +18,5 @@ public interface AsyCallback {
 	 * @param result
 	 *            rpc调用返回结果
 	 */
-	public void execute(Object result);
+	public void execute(RpcResponse response);
 }

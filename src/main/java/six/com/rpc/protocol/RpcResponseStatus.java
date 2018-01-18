@@ -31,4 +31,13 @@ public interface RpcResponseStatus {
 	 * 没有找到服务
 	 */
 	int UNFOUND_SERVICE= 5;
+	
+	/**
+	 * 链接失败
+	 */
+	int CONNECT_FAILED=6;
+	/**
+	 * 发送失败
+	 */
+	int SEND_FAILED= 7;
 }

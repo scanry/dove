@@ -27,7 +27,7 @@ public class ClientToServerConnection extends NettyConnection {
 
 	private RpcClient rpcCilent;
 	private Map<String, WrapperFuture> requestMap = new ConcurrentHashMap<>();
-	
+
 	protected ClientToServerConnection(RpcClient rpcCilent, String host, int port) {
 		super(host, port);
 		this.rpcCilent = rpcCilent;
@@ -37,7 +37,7 @@ public class ClientToServerConnection extends NettyConnection {
 	protected void channelRead0(ChannelHandlerContext ctx, RpcMsg msg) throws Exception {
 		if (msg instanceof RpcResponse) {
 			RpcResponse rpcResponse = (RpcResponse) msg;
-			WrapperFuture wrapperRPCRequest =removeWrapperFuture(rpcResponse.getId());
+			WrapperFuture wrapperRPCRequest = removeWrapperFuture(rpcResponse.getId());
 			if (null != wrapperRPCRequest) {
 				wrapperRPCRequest.onComplete(rpcResponse, System.currentTimeMillis());
 				log.debug("client received rpcResponse from rpcRequest[" + wrapperRPCRequest.getRPCRequest().toString()
@@ -56,7 +56,7 @@ public class ClientToServerConnection extends NettyConnection {
 	 * @param callTimeout
 	 * @return
 	 */
-	public WrapperFuture send(RpcRequest rpcRequest,long timeout) {
+	public WrapperFuture send(RpcRequest rpcRequest, long timeout) {
 		WrapperFuture wrapperFuture = new WrapperFuture(rpcRequest);
 		wrapperFuture.setSendTime(System.currentTimeMillis());
 		putWrapperFuture(rpcRequest.getId(), wrapperFuture);
@@ -69,8 +69,8 @@ public class ClientToServerConnection extends NettyConnection {
 					if (future.isSuccess()) {
 						log.debug("send rpcRequest successed");
 					} else {
-						wrapperFuture.onComplete(null, System.currentTimeMillis());
 						removeWrapperFuture(rpcRequest.getId());
+						wrapperFuture.onComplete(RpcResponse.SEND_FAILED, System.currentTimeMillis());
 						log.debug("send rpcRequest failed");
 					}
 				}
@@ -78,11 +78,11 @@ public class ClientToServerConnection extends NettyConnection {
 		}
 		return wrapperFuture;
 	}
-	
-	public void putWrapperFuture(String rpcRequestId,WrapperFuture wrapperFuture) {
+
+	public void putWrapperFuture(String rpcRequestId, WrapperFuture wrapperFuture) {
 		requestMap.put(rpcRequestId, wrapperFuture);
 	}
-	
+
 	public WrapperFuture removeWrapperFuture(String rpcRequestId) {
 		return requestMap.remove(rpcRequestId);
 	}

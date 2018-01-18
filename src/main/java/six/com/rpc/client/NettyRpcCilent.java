@@ -151,8 +151,18 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 
 	@Override
 	public RpcResponse execute(RpcRequest rpcRequest) {
-		ClientToServerConnection clientToServerConnection = findHealthyNettyConnection(rpcRequest);
 		WrapperFuture wrapperFuture = null;
+		ClientToServerConnection clientToServerConnection = null;
+		try {
+			clientToServerConnection = findHealthyNettyConnection(rpcRequest);
+		} catch (Exception e) {
+			if (null != rpcRequest.getAsyCallback()) {
+				rpcRequest.getAsyCallback().execute(RpcResponse.CONNECT_FAILED);
+				return RpcResponse.CONNECT_FAILED;
+			} else {
+				throw new RpcException(e);
+			}
+		}
 		try {
 			wrapperFuture = clientToServerConnection.send(rpcRequest, callTimeout);
 		} catch (Exception e) {
@@ -241,7 +251,7 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	public void removeConnection(ClientToServerConnection connection) {
 		pool.remove(connection);
 	}
-	
+
 	@Override
 	public void shutdown() {
 		if (null != workerGroup) {
