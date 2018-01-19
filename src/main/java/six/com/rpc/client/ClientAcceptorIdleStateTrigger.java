@@ -26,8 +26,6 @@ public class ClientAcceptorIdleStateTrigger extends ChannelInboundHandlerAdapter
 			IdleState state = ((IdleStateEvent) evt).state();
 			if (state == IdleState.WRITER_IDLE) {
 				ctx.writeAndFlush(HeartbeatMsg.heartbeatMsg());
-				String address = ctx.channel().remoteAddress().toString();
-				log.debug("send heartbeat msg to server[" + address + "]");
 			}
 		} else {
 			super.userEventTriggered(ctx, evt);

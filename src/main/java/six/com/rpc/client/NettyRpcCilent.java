@@ -80,10 +80,10 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	 * 用来存放服务，
 	 */
 	private Map<String, Object> serviceWeakHashMap;
-	// 请求超时时间 10秒
-	private long callTimeout = 30000;
-	// 建立连接超时时间 60秒
-	private long connectionTimeout = 10000;
+	// 请求超时时间 6秒
+	private long callTimeout =6000;
+	// 建立连接超时时间6秒
+	private long connectionTimeout = 6000;
 
 	public NettyRpcCilent() {
 		this(0);
@@ -168,6 +168,8 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 		} catch (Exception e) {
 			clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
 			throw new RpcException(e);
+		}finally {
+			
 		}
 		if (!wrapperFuture.hasAsyCallback()) {
 			RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);

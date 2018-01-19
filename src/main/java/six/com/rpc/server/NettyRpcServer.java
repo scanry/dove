@@ -1,6 +1,7 @@
 package six.com.rpc.server;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Objects;
@@ -189,8 +190,12 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 		Objects.requireNonNull(protocol, "protocol must not be null");
 		Objects.requireNonNull(instance, "instance must not be null");
 		if (!protocol.isAssignableFrom(instance.getClass())) {
-			throw new RuntimeException("protocolClass " + protocol.getName()
-					+ " is not implemented by protocolImpl which is of class " + instance.getClass());
+			throw new RuntimeException("protocolClass " + protocol.getCanonicalName()
+					+ " is not implemented by protocolImpl which is of class " + instance.getClass().getCanonicalName());
+		}
+		int modifiers=instance.getClass().getModifiers();
+		if(!"public".equals(Modifier.toString(modifiers))) {
+			throw new RuntimeException("the instance's class["+instance.getClass().getCanonicalName()+"] is not public protocolClass ");
 		}
 		String protocolName = protocol.getName();
 		Method[] protocolMethods = protocol.getMethods();

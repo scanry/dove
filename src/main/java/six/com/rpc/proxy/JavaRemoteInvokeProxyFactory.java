@@ -195,7 +195,7 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 		} else {
 			clz.append("		this.instance.").append(method);
 			clz.append("(").append(invokePamasStr).append(");\n");
-			clz.append("		return null;");
+			clz.append("		return null;\n");
 		}
 		clz.append("	}\n");
 		clz.append("}\n");
@@ -225,23 +225,21 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 		clzSb.append("		this.port=port;\n");
 		clzSb.append("		this.asyCallback=asyCallback;\n");
 		clzSb.append("	}\n");
-
 		Method[] methods = clz.getMethods();
 		String methodName = null;
 		Class<?> returnType = null;
 		String returnTypeCanonicalName = null;
-		String invokePamasStr = "";
 		Parameter[] parameter = null;
-		StringBuilder throwsException = new StringBuilder();
 		Class<?>[] throwsExceptionType = null;
 		String serviceName = null;
 		for (Method method : methods) {
+			StringBuilder throwsException = new StringBuilder();
 			StringBuilder args = new StringBuilder();
+			String invokePamasStr = "";
 			methodName = method.getName();
 			returnType = method.getReturnType();
 			returnTypeCanonicalName = returnType.getCanonicalName();
 			parameter = method.getParameters();
-
 			if (null != parameter && parameter.length > 0) {
 				String parameterTypeName = null;
 				StringBuilder invokePamasSb = new StringBuilder();

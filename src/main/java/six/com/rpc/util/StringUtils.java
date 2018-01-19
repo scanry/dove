@@ -8,10 +8,19 @@ package six.com.rpc.util;
 public class StringUtils {
 
 	public static boolean isNotBlank(String str) {
-		return false;
+		return !isBlank(str);
 	}
 
-	public static boolean isBlank(String str) {
-		return false;
+	public static boolean isBlank(final CharSequence cs) {
+		int strLen;
+		if (cs == null || (strLen = cs.length()) == 0) {
+			return true;
+		}
+		for (int i = 0; i < strLen; i++) {
+			if (Character.isWhitespace(cs.charAt(i)) == false) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
