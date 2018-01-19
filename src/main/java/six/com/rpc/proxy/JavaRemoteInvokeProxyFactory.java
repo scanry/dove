@@ -391,7 +391,6 @@ public class JavaRemoteInvokeProxyFactory implements RemoteInvokeProxyFactory {
 
 	}
 
-	@SuppressWarnings("unused")
 	private static final class JavaFileManagerImpl extends ForwardingJavaFileManager<JavaFileManager> {
 
 		private final ProxyClassLoad classLoader;
