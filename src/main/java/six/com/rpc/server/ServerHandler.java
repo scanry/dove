@@ -96,16 +96,16 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 				response.setMsg("the msg is illegal");
 				ctx.writeAndFlush(response);
 				ctx.close();
-				log.warn("the msg is illegal from channel[" + address + "]", cause);
+				log.warn("the msg is illegal from channel[" + address + "]");
 			} else if (signalErr.getRpcSystenType() == RpcSystenExceptions.MSG_TOO_BIG) {
 				RpcResponse response = new RpcResponse();
 				response.setMsg("the msg is too big");
 				ctx.writeAndFlush(response);
 				ctx.close();
-				log.warn("the msg is too big from channel[" + address + "]", cause);
+				log.warn("the msg is too big from channel[" + address + "]");
 			} else if (signalErr.getRpcSystenType() == RpcSystenExceptions.READER_IDLE) {
 				ch.close();
-				log.warn("the channel[" + address + "] is reader idle and will be close", cause);
+				log.warn("the channel[" + address + "] is reader idle and will be close");
 			}
 		} else {
 			ch.close();

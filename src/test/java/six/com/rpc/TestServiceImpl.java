@@ -5,7 +5,7 @@ package six.com.rpc;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月6日 下午6:21:53
  */
-public class TestServiceImpl implements TestService {
+public class TestServiceImpl implements TestService<String> {
 
 	@RpcService(name="say")
 	@Override
