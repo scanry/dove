@@ -25,12 +25,12 @@ public class ClientToServerConnection extends NettyConnection {
 
 	final static Logger log = LoggerFactory.getLogger(ClientToServerConnection.class);
 
-	private RpcClient rpcCilent;
+	private RpcClient rpcClient;
 	private Map<String, WrapperFuture> requestMap = new ConcurrentHashMap<>();
 
-	protected ClientToServerConnection(RpcClient rpcCilent, String host, int port) {
+	protected ClientToServerConnection(RpcClient rpcClient,String host, int port) {
 		super(host, port);
-		this.rpcCilent = rpcCilent;
+		this.rpcClient=rpcClient;
 	}
 
 	@Override
@@ -71,6 +71,7 @@ public class ClientToServerConnection extends NettyConnection {
 					} else {
 						removeWrapperFuture(rpcRequest.getId());
 						wrapperFuture.onComplete(RpcResponse.SEND_FAILED, System.currentTimeMillis());
+						close();
 						log.debug("send rpcRequest failed");
 					}
 				}
@@ -90,7 +91,7 @@ public class ClientToServerConnection extends NettyConnection {
 	@Override
 	protected void doClose() {
 		requestMap.clear();
-		this.rpcCilent.removeConnection(this);
+		rpcClient.removeConnection(this);
 	}
 
 }

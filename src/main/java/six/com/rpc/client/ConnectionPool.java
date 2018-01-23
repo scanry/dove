@@ -1,9 +1,8 @@
 package six.com.rpc.client;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +17,7 @@ import six.com.rpc.util.StringUtils;
 public class ConnectionPool<T extends NettyConnection> {
 
 	final static Logger log = LoggerFactory.getLogger(ConnectionPool.class);
-
-	private Map<String, T> connectionMap = new ConcurrentHashMap<>();
+	private Map<String, T> connectionMap = new HashMap<>();
 
 	public T find(String connectionKey) {
 		T findNettyConnection = null;
@@ -41,12 +39,11 @@ public class ConnectionPool<T extends NettyConnection> {
 
 	public void remove(T nettyConnection) {
 		if (null != nettyConnection) {
-			nettyConnection.close();
 			connectionMap.remove(nettyConnection.getConnectionKey());
 		}
 	}
 
-	public void closeExpire(long expireTime) {
+	private void closeExpire(long expireTime) {
 		Iterator<Map.Entry<String, T>> mapIterator = connectionMap.entrySet().iterator();
 		long now = System.currentTimeMillis();
 		while (mapIterator.hasNext()) {

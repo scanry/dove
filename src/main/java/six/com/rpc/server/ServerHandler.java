@@ -1,5 +1,6 @@
 package six.com.rpc.server;
 
+import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import six.com.rpc.util.ExceptionUtils;
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月21日 上午10:34:59
+ *
  */
 public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 
@@ -107,9 +109,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 				ch.close();
 				log.warn("the channel[" + address + "] is reader idle and will be close");
 			}
-		} else {
+		} else if (cause instanceof IOException) {
 			ch.close();
-			log.warn("unknow err and close channel[" + address + "]", cause);
+			log.warn("unknow err and close channel[" + address + "]");
+		} else{
+			ch.close();
+			log.warn("unknow err and close channel[" + address + "]",cause);
 		}
 	}
 
