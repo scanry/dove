@@ -68,6 +68,12 @@ public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg
 
 	protected abstract void doConnect();
 
+	
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        ctx.fireExceptionCaught(cause);
+    }
 	/**
 	 * 是否可用
 	 * 
