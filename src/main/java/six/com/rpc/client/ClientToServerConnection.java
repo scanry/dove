@@ -88,13 +88,9 @@ public class ClientToServerConnection extends NettyConnection {
 	}
 
 	@Override
-	protected void doConnect() {
-		this.rpcCilent.removeConnection(this);
-	}
-
-	@Override
 	protected void doClose() {
 		requestMap.clear();
+		this.rpcCilent.removeConnection(this);
 	}
 
 }

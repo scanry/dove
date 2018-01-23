@@ -1,5 +1,7 @@
 package six.com.rpc.client;
 
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,18 +64,21 @@ public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		doConnect();
+		close();
 		super.channelInactive(ctx);
 	}
 
-	protected abstract void doConnect();
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		if (cause instanceof IOException) {
+			String address = ctx.channel().remoteAddress().toString();
+			close();
+			log.warn("connection to remote[" + address + "] exception and the connection was closed");
+		} else {
+			ctx.fireExceptionCaught(cause);
+		}
+	}
 
-	
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
-        ctx.fireExceptionCaught(cause);
-    }
 	/**
 	 * 是否可用
 	 * 
