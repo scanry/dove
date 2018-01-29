@@ -19,28 +19,27 @@ public class ConnectionPool<T extends RpcConnection> {
 	final static Logger log = LoggerFactory.getLogger(ConnectionPool.class);
 	private Map<String, T> connectionMap = new HashMap<>();
 
-	public T find(String connectionKey) {
+	public T find(String id) {
 		T findNettyConnection = null;
-		if (StringUtils.isNotBlank(connectionKey)) {
-			findNettyConnection = connectionMap.get(connectionKey);
+		if (StringUtils.isNotBlank(id)) {
+			findNettyConnection = connectionMap.get(id);
 		}
 		return findNettyConnection;
 	}
 
 	public void put(T nettyConnection) {
 		if (null != nettyConnection) {
-			T oldNettyConnection = find(nettyConnection.getKey());
+			T oldNettyConnection = find(nettyConnection.getId());
 			close(oldNettyConnection);
-			connectionMap.put(nettyConnection.getKey(), nettyConnection);
+			connectionMap.put(nettyConnection.getId(), nettyConnection);
 		}
 	}
 
 	public void remove(T nettyConnection) {
 		if (null != nettyConnection) {
-			connectionMap.remove(nettyConnection.getKey());
+			connectionMap.remove(nettyConnection.getId());
 		}
 	}
-
 
 	private void closeExpire(long expireTime) {
 		Iterator<Map.Entry<String, T>> mapIterator = connectionMap.entrySet().iterator();
@@ -58,7 +57,7 @@ public class ConnectionPool<T extends RpcConnection> {
 	public void destroy() {
 		closeExpire(0);
 	}
-	
+
 	public void close(T connection) {
 		if (null != connection) {
 			try {

@@ -126,13 +126,13 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 	private RpcConnection findHealthyRpcConnection(RpcRequest rpcRequest) {
 		String callHost = rpcRequest.getCallHost();
 		int callPort = rpcRequest.getCallPort();
-		String findKey = ClientToServerConnection.newConnectionKey(callHost, callPort);
-		RpcConnection clientToServerConnection = pool.find(findKey);
+		String id = RpcConnection.newConnectionKey(callHost, callPort);
+		RpcConnection clientToServerConnection = pool.find(id);
 		if (null == clientToServerConnection) {
 			synchronized (pool) {
-				clientToServerConnection = pool.find(findKey);
+				clientToServerConnection = pool.find(id);
 				if (null == clientToServerConnection) {
-					clientToServerConnection = newRpcConnection(callHost, callPort);
+					clientToServerConnection = newRpcConnection(id,callHost, callPort);
 					pool.put(clientToServerConnection);
 				}
 			}
@@ -154,8 +154,7 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 		return clientToServerConnection;
 	}
 
-	protected abstract RpcConnection newRpcConnection(String callHost, int callPort);
-
+	protected abstract RpcConnection newRpcConnection(String id,String callHost, int callPort);
 
 	/**
 	 * rpc service key=目标host+:+目标端口+service class name

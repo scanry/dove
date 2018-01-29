@@ -20,19 +20,22 @@ import six.com.rpc.protocol.RpcResponse;
  * @date 创建时间：2017年3月20日 下午11:05:56
  */
 
-public class ClientToServerConnection extends NettyConnection implements RpcConnection{
+public class ClientToServerConnection extends NettyConnection implements RpcConnection {
 
 	final static Logger log = LoggerFactory.getLogger(ClientToServerConnection.class);
 
 	private AbstractClient rpcClient;
+	private String id;
 	private String host;
 	private int port;
-	private Map<String, WrapperFuture> requestMap = new ConcurrentHashMap<>();
+	private Map<String, WrapperFuture> requestMap;
 
-	protected ClientToServerConnection(AbstractClient rpcClient,String host, int port) {
-		this.host=host;
-		this.port=port;
-		this.rpcClient=rpcClient;
+	protected ClientToServerConnection(AbstractClient rpcClient, String id, String host, int port) {
+		this.rpcClient = rpcClient;
+		this.id = id;
+		this.host = host;
+		this.port = port;
+		this.requestMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -92,15 +95,20 @@ public class ClientToServerConnection extends NettyConnection implements RpcConn
 	public WrapperFuture removeWrapperFuture(String rpcRequestId) {
 		return requestMap.remove(rpcRequestId);
 	}
-	
+
 	@Override
-	public String getKey() {
-		return newConnectionKey(host, port);
+	public String getId() {
+		return id;
 	}
 
-	public static String newConnectionKey(String host, int port) {
-		String findKey = host + ":" + port;
-		return findKey;
+	@Override
+	public String getHost() {
+		return host;
+	}
+
+	@Override
+	public int getPort() {
+		return port;
 	}
 
 	@Override

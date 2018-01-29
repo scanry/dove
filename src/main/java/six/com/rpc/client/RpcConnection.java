@@ -9,14 +9,32 @@ import six.com.rpc.protocol.RpcRequest;
  * @version:
  * @describe //TODO
  */
-public interface RpcConnection extends AutoCloseable{
+public interface RpcConnection extends AutoCloseable {
 
-	String getKey();
+	/**
+	 * 链接key
+	 * 
+	 * @param host
+	 *            目标主机
+	 * @param port
+	 *            目标端口
+	 * @return
+	 */
+	public static String newConnectionKey(String host, int port) {
+		String findKey = host + ":" + port;
+		return findKey;
+	}
+
+	String getId();
 	
+	String getHost();
+	
+	int getPort();
+
 	boolean available();
-	
+
 	long getLastActivityTime();
-	
+
 	void putWrapperFuture(String rpcRequestId, WrapperFuture wrapperFuture);
 
 	WrapperFuture removeWrapperFuture(String rpcRequestId);

@@ -83,8 +83,8 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	}
 
 	@Override
-	protected RpcConnection newRpcConnection(String callHost, int callPort) {
-		final ClientToServerConnection newClientToServerConnection = new ClientToServerConnection(this, callHost,
+	protected RpcConnection newRpcConnection(String id, String callHost, int callPort) {
+		final ClientToServerConnection newClientToServerConnection = new ClientToServerConnection(this, id, callHost,
 				callPort);
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(workerGroup);
