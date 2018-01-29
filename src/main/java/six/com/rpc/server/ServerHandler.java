@@ -58,10 +58,13 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 				wrapperServiceTuple.getExecutorService().submit(() -> {
 					log.debug("server received coommand[" + rpcRequest.getCommand() + "] from:" + address);
 					try {
+						wrapperServiceTuple.getHook().beforeHook(rpcRequest.getParams());
 						Object result = wrapperServiceTuple.getWrapperService().invoke(rpcRequest.getParams());
+						wrapperServiceTuple.getHook().afterHook(rpcRequest.getParams());
 						rpcResponse.setStatus(RpcResponseStatus.SUCCEED);
 						rpcResponse.setResult(result);
 					} catch (Exception e) {
+						wrapperServiceTuple.getHook().exceptionHook(rpcRequest.getParams());
 						String errMsg = ExceptionUtils.getExceptionMsg(e);
 						rpcResponse.setStatus(RpcResponseStatus.INVOKE_ERR);
 						rpcResponse.setMsg(errMsg);

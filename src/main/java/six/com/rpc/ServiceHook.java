@@ -7,15 +7,35 @@ package six.com.rpc;
  * @version:
  * @describe //TODO
  */
-@FunctionalInterface
 public interface ServiceHook {
 
 	public static ServiceHook DEFAULT_HOOK = new ServiceHook() {
 		@Override
-		public void hook(Object parameter) {
+		public void beforeHook(Object[] parameter) {}
 
-		}
+		@Override
+		public void exceptionHook(Object[] parameter) {}
+
+		@Override
+		public void afterHook(Object[] parameter) {}
+
 	};
 
-	void hook(Object parameter);
+	/**
+	 * 方法调用前钩子
+	 * @param parameter
+	 */
+	void beforeHook(Object[] parameter);
+	
+	/**
+	 * 方法调用异常时钩子
+	 * @param parameter
+	 */
+	void exceptionHook(Object[] parameter);
+	
+	/**
+	 * 方法调用后钩子
+	 * @param parameter
+	 */
+	void afterHook(Object[] parameter);
 }
