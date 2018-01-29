@@ -50,11 +50,41 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 	}
 
 	@Override
-	public RpcResponse execute(RpcRequest rpcRequest) {
-		return execute(rpcRequest, getCallTimeout());
+	public <T> T lookupService(Class<?> clz) {
+		throw new UnsupportedOperationException();
 	}
 
-	private RpcResponse execute(RpcRequest rpcRequest, long callTimeout) {
+	@Override
+	public <T> T lookupService(Class<?> clz, AsyCallback callback) {
+		throw new UnsupportedOperationException();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, final AsyCallback asyCallback) {
+		checkParma(targetHost, targetPort, clz);
+		String packageName = clz.getPackage().getName();
+		String className = buildClientInterfaceWrapperClassName(clz);
+		String fullClassName = packageName + "." + className;
+		return (T) getCompiler().findOrCompile(fullClassName,
+				new Class<?>[] { AbstractClient.class, String.class, int.class, AsyCallback.class },
+				new Object[] { this, targetHost, targetPort, asyCallback }, () -> {
+					return buildClientInterfaceWrapperCode(clz, packageName, className);
+				});
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz) {
+		checkParma(targetHost, targetPort, clz);
+		String key = serviceKey(targetHost, targetPort, clz);
+		Object service = serviceWeakHashMap.computeIfAbsent(key, mapkey -> {
+			return lookupService(targetHost, targetPort, clz, null);
+		});
+		return (T) service;
+	}
+
+	@Override
+	public RpcResponse execute(RpcRequest rpcRequest) {
 		WrapperFuture wrapperFuture = null;
 		RpcConnection clientToServerConnection = null;
 		try {
@@ -126,37 +156,6 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 
 	protected abstract RpcConnection newRpcConnection(String callHost, int callPort);
 
-	protected static String buildClientInterfaceWrapperClassName(Class<?> clz) {
-		StringBuilder classSb = new StringBuilder();
-		String instanceName = clz.getSimpleName();
-		classSb.append("RpcClientInterfaceProxy$");
-		classSb.append(instanceName);
-		return classSb.toString();
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, final AsyCallback asyCallback) {
-		checkParma(targetHost, targetPort, clz);
-		String packageName = clz.getPackage().getName();
-		String className = buildClientInterfaceWrapperClassName(clz);
-		String fullClassName = packageName + "." + className;
-		return (T) getCompiler().findOrCompile(fullClassName,
-				new Class<?>[] { AbstractClient.class, String.class, int.class, AsyCallback.class },
-				new Object[] { this, targetHost, targetPort, asyCallback }, () -> {
-					return buildClientInterfaceWrapperCode(clz, packageName, className);
-				});
-	}
-
-	@SuppressWarnings("unchecked")
-	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz) {
-		checkParma(targetHost, targetPort, clz);
-		String key = serviceKey(targetHost, targetPort, clz);
-		Object service = serviceWeakHashMap.computeIfAbsent(key, mapkey -> {
-			return lookupService(targetHost, targetPort, clz, null);
-		});
-		return (T) service;
-	}
 
 	/**
 	 * rpc service key=目标host+:+目标端口+service class name

@@ -5,7 +5,10 @@ import java.lang.reflect.Method;
 import org.junit.Test;
 
 import six.com.rpc.Compiler;
+import six.com.rpc.TestService;
+import six.com.rpc.TestServiceImpl;
 import six.com.rpc.common.WrapperService;
+import six.com.rpc.compiler.JavaCompilerImpl;
 import six.com.rpc.server.AbstractServer;
 
 /**
@@ -16,30 +19,16 @@ import six.com.rpc.server.AbstractServer;
  */
 public class JavaCompilerImplTest {
 
-	public static interface TestService {
-		String hello(String name, String content);
-	}
-
-	public static class TestServiceImpl implements TestService {
-
-		@Override
-		public String hello(String name, String content) {
-			return "hello world:" + name + "," + content;
-		}
-
-	}
-
 	@Test
 	public void test() {
-		String[] paras = new String[] { "sixliu", "hello" };
+		String[] paras = new String[] {"sixliu"};
 		Compiler compiler = new JavaCompilerImpl();
 		Class<?> protocolClass = TestService.class;
 		TestService testService = new TestServiceImpl();
-
 		try {
-			Method hello = TestService.class.getMethod("hello", String.class, String.class);
+			Method hello = TestService.class.getMethod("say",String.class);
 			String className = AbstractServer.buildServerServiceClassName(testService, hello);
-			String packageName = TestService.class.getPackage().getName();
+			String packageName = protocolClass.getPackage().getName();
 			String fullClassName = packageName + "." + className;
 			WrapperService result = (WrapperService) compiler.findOrCompile(fullClassName,
 					new Class<?>[] { protocolClass }, new Object[] { testService }, () -> {

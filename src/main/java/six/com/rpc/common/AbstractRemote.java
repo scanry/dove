@@ -60,6 +60,14 @@ public abstract class AbstractRemote implements Remote {
 		requestId.append(requestIndex.incrementAndGet());
 		return requestId.toString();
 	}
+	
+	public static String buildClientInterfaceWrapperClassName(Class<?> clz) {
+		StringBuilder classSb = new StringBuilder();
+		String instanceName = clz.getSimpleName();
+		classSb.append("RpcClientInterfaceProxy$");
+		classSb.append(instanceName);
+		return classSb.toString();
+	}
 
 	public static final String getServiceName(String protocolClassName, Method serviceMethod) {
 		Parameter[] parameter = serviceMethod.getParameters();
@@ -77,7 +85,7 @@ public abstract class AbstractRemote implements Remote {
 		return serviceName.toString();
 	}
 
-	protected static boolean hasReturnType(Method instanceMethod) {
+	public static boolean hasReturnType(Method instanceMethod) {
 		if (null != instanceMethod.getReturnType() && Void.class != instanceMethod.getReturnType()
 				&& !"void".equals(instanceMethod.getReturnType().getName())) {
 			return true;
@@ -86,7 +94,7 @@ public abstract class AbstractRemote implements Remote {
 		}
 	}
 
-	private static String getLocalMac() {
+	public static String getLocalMac() {
 		String mac = "";
 		try {
 			InetAddress ia = InetAddress.getLocalHost();
@@ -107,7 +115,7 @@ public abstract class AbstractRemote implements Remote {
 		return mac;
 	}
 
-	private static String getPid() {
+	public static String getPid() {
 		String name = ManagementFactory.getRuntimeMXBean().getName();
 		String pid = name.split("@")[0];
 		return pid;

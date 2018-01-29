@@ -24,10 +24,10 @@ import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import six.com.rpc.Compiler;
 import six.com.rpc.RpcServer;
 import six.com.rpc.common.NettyConstant;
+import six.com.rpc.compiler.JavaCompilerImpl;
 import six.com.rpc.protocol.RpcDecoder;
 import six.com.rpc.protocol.RpcEncoder;
 import six.com.rpc.protocol.RpcSerialize;
-import six.com.rpc.proxy.JavaCompilerImpl;
 
 /**
  * @author 作者

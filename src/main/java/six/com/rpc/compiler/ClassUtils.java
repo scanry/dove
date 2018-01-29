@@ -1,4 +1,4 @@
-package six.com.rpc.proxy;
+package six.com.rpc.compiler;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
