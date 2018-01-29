@@ -16,32 +16,15 @@ import six.com.rpc.protocol.RpcMsg;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月21日 上午9:08:36
  */
-public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg> {
+public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg> implements RpcConnection {
 
 	final static Logger log = LoggerFactory.getLogger(NettyConnection.class);
-
-	private String host;
-
-	private int port;
 
 	private volatile long lastActivityTime;
 
 	private volatile ChannelHandlerContext ctx;
 	// netty Channel
 	private volatile Channel channel;
-
-	NettyConnection(String host, int port) {
-		this.host = host;
-		this.port = port;
-	}
-
-	public String getHost() {
-		return host;
-	}
-
-	public int getPort() {
-		return port;
-	}
 
 	public ChannelHandlerContext getContext() {
 		return ctx;
@@ -84,14 +67,17 @@ public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg
 	 * 
 	 * @return
 	 */
+	@Override
 	public boolean available() {
 		return null != channel && channel.isActive();
 	}
 
+	@Override
 	public long getLastActivityTime() {
 		return lastActivityTime;
 	}
 
+	@Override
 	public void close() {
 		if (null != ctx) {
 			ctx.close();
@@ -106,14 +92,4 @@ public abstract class NettyConnection extends SimpleChannelInboundHandler<RpcMsg
 			ctx.disconnect();
 		}
 	}
-
-	public String getConnectionKey() {
-		return getNewConnectionKey(host, port);
-	}
-
-	public static String getNewConnectionKey(String host, int port) {
-		String findKey = host + ":" + port;
-		return findKey;
-	}
-
 }

@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import six.com.rpc.WrapperServiceTuple;
+import six.com.rpc.common.WrapperServiceTuple;
 import six.com.rpc.exception.RpcSystenException;
 import six.com.rpc.exception.RpcSystenExceptions;
 import six.com.rpc.protocol.RpcMsg;
@@ -28,9 +28,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 
 	final static Logger log = LoggerFactory.getLogger(ServerHandler.class);
 
-	private RpcServer rpcServer;
+	private AbstractServer rpcServer;
 
-	public ServerHandler(RpcServer rpcServer) {
+	public ServerHandler(AbstractServer rpcServer) {
 		this.rpcServer = rpcServer;
 	}
 
@@ -112,9 +112,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<RpcMsg> {
 		} else if (cause instanceof IOException) {
 			ch.close();
 			log.warn("unknow err and close channel[" + address + "]");
-		} else{
+		} else {
 			ch.close();
-			log.warn("unknow err and close channel[" + address + "]",cause);
+			log.warn("unknow err and close channel[" + address + "]", cause);
 		}
 	}
 

@@ -1,8 +1,5 @@
 package six.com.rpc.client;
 
-import java.util.Collections;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,22 +12,13 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import six.com.rpc.AsyCallback;
-import six.com.rpc.NettyConstant;
 import six.com.rpc.RpcClient;
-import six.com.rpc.RemoteInvokeProxyFactory;
-import six.com.rpc.exception.RpcException;
-import six.com.rpc.exception.RpcInvokeException;
-import six.com.rpc.exception.RpcNotFoundServiceException;
-import six.com.rpc.exception.RpcRejectServiceException;
-import six.com.rpc.exception.RpcTimeoutException;
+import six.com.rpc.common.NettyConstant;
+import six.com.rpc.Compiler;
 import six.com.rpc.protocol.RpcDecoder;
 import six.com.rpc.protocol.RpcEncoder;
-import six.com.rpc.protocol.RpcRequest;
-import six.com.rpc.protocol.RpcResponse;
-import six.com.rpc.protocol.RpcResponseStatus;
 import six.com.rpc.protocol.RpcSerialize;
-import six.com.rpc.proxy.JavaRemoteInvokeProxyFactory;
+import six.com.rpc.proxy.JavaCompilerImpl;
 
 /**
  * @author 作者
@@ -71,151 +59,33 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	private ClientAcceptorIdleStateTrigger IdleStateTrigger = new ClientAcceptorIdleStateTrigger();
 
 	private EventLoopGroup workerGroup;
-	/**
-	 * 链接池
-	 */
-	private ConnectionPool<ClientToServerConnection> pool;
 
-	/**
-	 * 用来存放服务，
-	 */
-	private Map<String, Object> serviceWeakHashMap;
-	// 请求超时时间 6秒
-	private long callTimeout =6000;
-	// 建立连接超时时间6秒
-	private long connectionTimeout = 6000;
+	private static long DEFAULT_CALL_TIMEOUT = 6000;
 
 	public NettyRpcCilent() {
 		this(0);
 	}
 
 	public NettyRpcCilent(int workerGroupThreads) {
-		this(new JavaRemoteInvokeProxyFactory(), new RpcSerialize() {
-		}, workerGroupThreads);
+		this(new JavaCompilerImpl(), new RpcSerialize() {
+		}, workerGroupThreads, DEFAULT_CALL_TIMEOUT);
 	}
 
-	public NettyRpcCilent(RemoteInvokeProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
-			int workerGroupThreads) {
-		super(wrapperServiceProxyFactory, rpcSerialize);
+	public NettyRpcCilent(int workerGroupThreads, long callTimeout) {
+		this(new JavaCompilerImpl(), new RpcSerialize() {
+		}, workerGroupThreads, callTimeout);
+	}
+
+	public NettyRpcCilent(Compiler wrapperServiceProxyFactory, RpcSerialize rpcSerialize, int workerGroupThreads,
+			long callTimeout) {
+		super(wrapperServiceProxyFactory, rpcSerialize, callTimeout);
 		workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);
-		pool = new ConnectionPool<>();
-		serviceWeakHashMap = Collections.synchronizedMap(new java.util.WeakHashMap<>());
 	}
 
 	@Override
-	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, final AsyCallback asyCallback) {
-		checkParma(targetHost, targetPort, clz);
-		return getRemoteInvokeProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
-				asyCallback);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz) {
-		checkParma(targetHost, targetPort, clz);
-		String key = serviceKey(targetHost, targetPort, clz);
-		Object service = serviceWeakHashMap.computeIfAbsent(key, mapkey -> {
-			return getRemoteInvokeProxyFactory().newClientInterfaceWrapperInstance(this, targetHost, targetPort, clz,
-					null);
-		});
-		return (T) service;
-	}
-
-	public String buildClass(Class<?> clz) {
-		return null;
-	}
-
-	private void checkParma(String targetHost, int targetPort, Class<?> clz) {
-		if (null == targetHost || targetHost.trim().length() == 0) {
-			throw new IllegalArgumentException("this targetHost must be not blank");
-		}
-		if (1 > targetPort || 65535 < targetPort) {
-			throw new IllegalArgumentException("this targetPort[" + targetPort + "] is illegal");
-		}
-		if (!clz.isInterface()) {
-			throw new IllegalArgumentException("this clz[" + clz.getName() + "] is not tnterface");
-		}
-	}
-
-	/**
-	 * rpc service key=目标host+:+目标端口+service class name
-	 * 
-	 * @param targetHost
-	 * @param targetPort
-	 * @param clz
-	 * @return
-	 */
-	private String serviceKey(String targetHost, int targetPort, Class<?> clz) {
-		String key = targetHost + ":" + targetPort + "/" + clz.getName();
-		return key;
-	}
-
-	@Override
-	public RpcResponse execute(RpcRequest rpcRequest) {
-		WrapperFuture wrapperFuture = null;
-		ClientToServerConnection clientToServerConnection = null;
-		try {
-			clientToServerConnection = findHealthyNettyConnection(rpcRequest);
-		} catch (Exception e) {
-			if (null != rpcRequest.getAsyCallback()) {
-				rpcRequest.getAsyCallback().execute(RpcResponse.CONNECT_FAILED);
-				return RpcResponse.CONNECT_FAILED;
-			} else {
-				throw new RpcException(e);
-			}
-		}
-		try {
-			wrapperFuture = clientToServerConnection.send(rpcRequest, callTimeout);
-		} catch (Exception e) {
-			clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
-			throw new RpcException(e);
-		}finally {
-			
-		}
-		if (!wrapperFuture.hasAsyCallback()) {
-			RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
-			if (null == rpcResponse) {
-				clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
-				throw new RpcTimeoutException(
-						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + callTimeout + "]");
-			} else if (rpcResponse.getStatus() == RpcResponseStatus.UNFOUND_SERVICE) {
-				throw new RpcNotFoundServiceException(rpcResponse.getMsg());
-			} else if (rpcResponse.getStatus() == RpcResponseStatus.REJECT) {
-				throw new RpcRejectServiceException(rpcResponse.getMsg());
-			} else if (rpcResponse.getStatus() == RpcResponseStatus.INVOKE_ERR) {
-				throw new RpcInvokeException(rpcResponse.getMsg());
-			} else {
-				return rpcResponse;
-			}
-		} else {
-			return null;
-		}
-	}
-
-	/**
-	 * 获取可用的netty 链接
-	 * 
-	 * @param rpcRequest
-	 * @return
-	 */
-	private ClientToServerConnection findHealthyNettyConnection(RpcRequest rpcRequest) {
-		String callHost = rpcRequest.getCallHost();
-		int callPort = rpcRequest.getCallPort();
-		String findKey = NettyConnection.getNewConnectionKey(callHost, callPort);
-		ClientToServerConnection clientToServerConnection = pool.find(findKey);
-		if (null == clientToServerConnection) {
-			synchronized (pool) {
-				clientToServerConnection = pool.find(findKey);
-				if (null == clientToServerConnection) {
-					clientToServerConnection = newNettyConnection(callHost, callPort);
-				}
-			}
-		}
-		return clientToServerConnection;
-	}
-
-	private ClientToServerConnection newNettyConnection(String callHost, int callPort) {
-		final ClientToServerConnection newClientToServerConnection = new ClientToServerConnection(this,
-				callHost, callPort);
+	protected RpcConnection newRpcConnection(String callHost, int callPort) {
+		final ClientToServerConnection newClientToServerConnection = new ClientToServerConnection(this, callHost,
+				callPort);
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(workerGroup);
 		bootstrap.channel(NioSocketChannel.class);
@@ -233,25 +103,7 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 			}
 		});
 		bootstrap.connect(callHost, callPort);
-		long startTime = System.currentTimeMillis();
-		// 判断是否可用，如果不可用等待可用直到超时
-		while (!newClientToServerConnection.available()) {
-			long spendTime = System.currentTimeMillis() - startTime;
-			if (spendTime > connectionTimeout) {
-				newClientToServerConnection.close();
-				throw new RpcTimeoutException("connected " + callHost + ":" + callPort + " timeout:" + spendTime);
-			}
-		}
-		pool.put(newClientToServerConnection);
 		return newClientToServerConnection;
-	}
-
-	public long getCallTimeout() {
-		return callTimeout;
-	}
-
-	public void removeConnection(ClientToServerConnection connection) {
-		pool.remove(connection);
 	}
 
 	@Override

@@ -1,13 +1,6 @@
 package six.com.rpc.server;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,16 +20,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.NettyRuntime;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import six.com.rpc.NettyConstant;
-import six.com.rpc.WrapperService;
-import six.com.rpc.RemoteInvokeProxyFactory;
-import six.com.rpc.WrapperServiceTuple;
+import six.com.rpc.Compiler;
+import six.com.rpc.RpcServer;
+import six.com.rpc.common.NettyConstant;
 import six.com.rpc.protocol.RpcDecoder;
 import six.com.rpc.protocol.RpcEncoder;
 import six.com.rpc.protocol.RpcSerialize;
-import six.com.rpc.proxy.JavaRemoteInvokeProxyFactory;
+import six.com.rpc.proxy.JavaCompilerImpl;
 
 /**
  * @author 作者
@@ -51,16 +42,11 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 
 	private static boolean isLinuxPlatform = false;
 
-	private static final int DEFAULT_EVENT_LOOP_THREADS;
-
 	static {
 		if (OS_NAME != null && OS_NAME.toLowerCase().contains("linux")) {
 			isLinuxPlatform = true;
 		}
-		DEFAULT_EVENT_LOOP_THREADS = Math.max(1, NettyRuntime.availableProcessors() * 2);
 	}
-
-	private Map<String, WrapperServiceTuple> registerMap = new ConcurrentHashMap<>();
 
 	private ServerAcceptorIdleStateTrigger idleStateTrigger = new ServerAcceptorIdleStateTrigger();
 
@@ -74,8 +60,6 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 
 	private DefaultEventExecutorGroup workerCodeGroup;
 
-	private ExecutorService defaultBizExecutorService;
-
 	private ServerBootstrap serverBootstrap;
 
 	private boolean useEpoll;
@@ -88,13 +72,13 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 
 	public NettyRpcServer(String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads,
 			int workerBizThreads) {
-		this(new JavaRemoteInvokeProxyFactory(), new RpcSerialize() {
+		this(new JavaCompilerImpl(), new RpcSerialize() {
 		}, loaclHost, trafficPort, workerIoThreads, workerCodeThreads, workerBizThreads);
 	}
 
-	public NettyRpcServer(RemoteInvokeProxyFactory wrapperServiceProxyFactory, RpcSerialize rpcSerialize,
-			String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads, int workerBizThreads) {
-		super(wrapperServiceProxyFactory, rpcSerialize);
+	public NettyRpcServer(Compiler compiler, RpcSerialize rpcSerialize, String loaclHost, int trafficPort,
+			int workerIoThreads, int workerCodeThreads, int workerBizThreads) {
+		super(compiler, rpcSerialize);
 		this.loaclHost = loaclHost;
 		this.trafficPort = trafficPort;
 		bossGroup = new NioEventLoopGroup(1, new ThreadFactory() {
@@ -134,15 +118,7 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 						return new Thread(r, "NettyRpcServer-worker-code-thread_" + this.threadIndex.incrementAndGet());
 					}
 				});
-		defaultBizExecutorService = Executors.newFixedThreadPool(
-				workerBizThreads <= 0 ? DEFAULT_EVENT_LOOP_THREADS : workerBizThreads, new ThreadFactory() {
-					private AtomicInteger threadIndex = new AtomicInteger(0);
 
-					@Override
-					public Thread newThread(Runnable r) {
-						return new Thread(r, "NettyRpcServer-worker-biz-thread_" + this.threadIndex.incrementAndGet());
-					}
-				});
 		serverBootstrap = new ServerBootstrap();
 		serverBootstrap.group(bossGroup, workerIoGroup)
 				.localAddress(new InetSocketAddress(NettyRpcServer.this.loaclHost, NettyRpcServer.this.trafficPort))
@@ -175,63 +151,8 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 	}
 
 	@Override
-	public void start() {
+	protected void doStart() {
 		startThread.start();
-	}
-
-	@Override
-	public <T, I extends T> void register(Class<T> protocol, I instance) {
-		register(defaultBizExecutorService, protocol, instance);
-	}
-
-	@Override
-	public <T, I extends T> void register(ExecutorService bizExecutorService, Class<T> protocol, I instance) {
-		Objects.requireNonNull(bizExecutorService, "bizExecutorService must not be null");
-		Objects.requireNonNull(protocol, "protocol must not be null");
-		Objects.requireNonNull(instance, "instance must not be null");
-		if (!protocol.isAssignableFrom(instance.getClass())) {
-			throw new RuntimeException("protocolClass " + protocol.getCanonicalName()
-					+ " is not implemented by protocolImpl which is of class " + instance.getClass().getCanonicalName());
-		}
-		int modifiers=instance.getClass().getModifiers();
-		if(!"public".equals(Modifier.toString(modifiers))) {
-			throw new RuntimeException("the instance's class["+instance.getClass().getCanonicalName()+"] is not public protocolClass ");
-		}
-		String protocolName = protocol.getName();
-		Method[] protocolMethods = protocol.getMethods();
-		WrapperService wrapperService = null;
-		for (Method protocolMethod : protocolMethods) {
-			final String serviceName = getServiceName(protocolName, protocolMethod);
-			wrapperService = getRemoteInvokeProxyFactory().newServerWrapperService(instance, protocolMethod);
-			registerMap.put(serviceName, new WrapperServiceTuple(wrapperService, defaultBizExecutorService));
-		}
-
-	}
-
-	@Override
-	public void unregister(Class<?> protocol) {
-		Objects.requireNonNull(protocol, "protocol must not be null");
-		String protocolName = protocol.getName();
-		Method[] protocolMethods = protocol.getMethods();
-		for (Method protocolMethod : protocolMethods) {
-			final String serviceName = getServiceName(protocolName, protocolMethod);
-			registerMap.remove(serviceName);
-		}
-	}
-
-	@Override
-	public WrapperServiceTuple getWrapperServiceTuple(String rpcServiceName) {
-		return registerMap.get(rpcServiceName);
-	}
-
-	@Override
-	public void remove(String rpcServiceName) {
-		registerMap.remove(rpcServiceName);
-	}
-
-	@Override
-	public ExecutorService getDefaultBizExecutorService() {
-		return defaultBizExecutorService;
 	}
 
 	private boolean useEpoll() {
@@ -239,7 +160,7 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 	}
 
 	@Override
-	public void shutdown() {
+	protected void doShutdown() {
 		if (null != bossGroup) {
 			bossGroup.shutdownGracefully();
 		}
@@ -249,8 +170,6 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 		if (null != workerCodeGroup) {
 			workerCodeGroup.shutdownGracefully();
 		}
-		if (null != defaultBizExecutorService) {
-			defaultBizExecutorService.shutdown();
-		}
+
 	}
 }

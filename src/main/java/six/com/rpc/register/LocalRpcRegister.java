@@ -1,6 +1,6 @@
 package six.com.rpc.register;
 
-import six.com.rpc.ServicePath;
+import six.com.rpc.common.ServicePath;
 
 /**
  * @author 作者

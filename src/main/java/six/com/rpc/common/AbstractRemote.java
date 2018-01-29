@@ -1,4 +1,4 @@
-package six.com.rpc;
+package six.com.rpc.common;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
@@ -8,6 +8,7 @@ import java.net.NetworkInterface;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import six.com.rpc.Compiler;
 import six.com.rpc.protocol.RpcSerialize;
 
 /**
@@ -27,18 +28,18 @@ public abstract class AbstractRemote implements Remote {
 
 	private static AtomicInteger requestIndex = new AtomicInteger(0);
 	private RpcSerialize rpcSerialize;
-	private RemoteInvokeProxyFactory remoteInvokeProxyFactory;
+	private Compiler compiler;
 
-	public AbstractRemote(RemoteInvokeProxyFactory remoteInvokeProxyFactory, RpcSerialize rpcSerialize) {
-		Objects.requireNonNull(remoteInvokeProxyFactory);
+	public AbstractRemote(Compiler compiler, RpcSerialize rpcSerialize) {
+		Objects.requireNonNull(compiler);
 		Objects.requireNonNull(rpcSerialize);
-		this.remoteInvokeProxyFactory = remoteInvokeProxyFactory;
+		this.compiler = compiler;
 		this.rpcSerialize = rpcSerialize;
 	}
 
 	@Override
-	public RemoteInvokeProxyFactory getRemoteInvokeProxyFactory() {
-		return remoteInvokeProxyFactory;
+	public Compiler getCompiler() {
+		return compiler;
 	}
 
 	@Override
@@ -60,11 +61,11 @@ public abstract class AbstractRemote implements Remote {
 		return requestId.toString();
 	}
 
-	public final String getServiceName(String className, Method method) {
-		Parameter[] parameter = method.getParameters();
+	public static final String getServiceName(String protocolClassName, Method serviceMethod) {
+		Parameter[] parameter = serviceMethod.getParameters();
 		StringBuilder serviceName = new StringBuilder();
-		serviceName.append(className).append("_");
-		serviceName.append(method.getName()).append("_");
+		serviceName.append(protocolClassName).append("_");
+		serviceName.append(serviceMethod.getName()).append("_");
 		if (null != parameter) {
 			String parameterTypeName = null;
 			for (int i = 0, size = parameter.length; i < size; i++) {
@@ -74,6 +75,15 @@ public abstract class AbstractRemote implements Remote {
 			}
 		}
 		return serviceName.toString();
+	}
+
+	protected static boolean hasReturnType(Method instanceMethod) {
+		if (null != instanceMethod.getReturnType() && Void.class != instanceMethod.getReturnType()
+				&& !"void".equals(instanceMethod.getReturnType().getName())) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private static String getLocalMac() {
