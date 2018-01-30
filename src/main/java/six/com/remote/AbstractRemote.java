@@ -20,6 +20,7 @@ public abstract class AbstractRemote<S, R> implements Remote<S, R> {
 
 	private static String MAC;
 	private static String PID;
+	public static final int DEFAULT_SERVICE_VERSION = 1;
 
 	static {
 		MAC = getLocalMac();
@@ -85,14 +86,7 @@ public abstract class AbstractRemote<S, R> implements Remote<S, R> {
 		return serviceName.toString();
 	}
 
-	public static boolean hasReturnType(Method instanceMethod) {
-		if (null != instanceMethod.getReturnType() && Void.class != instanceMethod.getReturnType()
-				&& !"void".equals(instanceMethod.getReturnType().getName())) {
-			return true;
-		} else {
-			return false;
-		}
-	}
+
 
 	public static String getLocalMac() {
 		String mac = "";

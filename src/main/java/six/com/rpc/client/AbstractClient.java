@@ -11,7 +11,9 @@ import six.com.remote.client.AbstractClientRemote;
 import six.com.rpc.AsyCallback;
 import six.com.rpc.Compiler;
 import six.com.rpc.RpcClient;
+
 import six.com.rpc.protocol.RpcSerialize;
+import six.com.rpc.util.ClassUtils;
 
 /**
  * @author sixliu
@@ -46,12 +48,13 @@ public abstract class AbstractClient extends AbstractClientRemote implements Rpc
 	public <T> T lookupService(String targetHost, int targetPort, Class<?> clz, final AsyCallback asyCallback) {
 		checkParma(targetHost, targetPort, clz);
 		String packageName = clz.getPackage().getName();
-		String className = buildClientInterfaceWrapperClassName(clz);
-		String fullClassName = packageName + "." + className;
-		return (T) getCompiler().findOrCompile(fullClassName,
+		String proxyClassName = buildClientInterfaceWrapperClassName(clz);
+		String fullProxyClassName = packageName + "." + proxyClassName;
+		//ServiceName serviceName=ServiceName.newServiceName(clz.getCanonicalName(), methodName, parmaTypes, version)
+		return (T) getCompiler().findOrCompile(fullProxyClassName,
 				new Class<?>[] { AbstractClient.class, String.class, int.class, AsyCallback.class },
 				new Object[] { this, targetHost, targetPort, asyCallback }, () -> {
-					return buildClientInterfaceWrapperCode(clz, packageName, className);
+					return buildClientInterfaceWrapperCode(clz, packageName, proxyClassName);
 				});
 	}
 
@@ -94,7 +97,8 @@ public abstract class AbstractClient extends AbstractClientRemote implements Rpc
 		clzSb.append("import ").append(importClass).append(";\n");
 		clzSb.append("import six.com.rpc.protocol.RpcRequest").append(";\n");
 		clzSb.append("import six.com.rpc.protocol.RpcResponse").append(";\n");
-		clzSb.append("import six.com.rpc.AsyCallback").append(";\n");
+		clzSb.append("import six.com.rpc.ServiceName").append(";\n");
+		clzSb.append("import six.com.rpc.AsyCallback").append(";\n\n");
 		clzSb.append("import ").append(interfaceName).append(";\n");
 		clzSb.append("public class ").append(className).append(" implements " + interfaceName + " {\n");
 		clzSb.append("	private ").append(importClass).append(" rpcClient;\n");
@@ -114,10 +118,10 @@ public abstract class AbstractClient extends AbstractClientRemote implements Rpc
 		String returnTypeCanonicalName = null;
 		Parameter[] parameter = null;
 		Class<?>[] throwsExceptionType = null;
-		String serviceName = null;
 		for (Method method : methods) {
 			StringBuilder throwsException = new StringBuilder();
 			StringBuilder args = new StringBuilder();
+			StringBuilder parmaTypes=new StringBuilder();
 			String invokePamasStr = "";
 			methodName = method.getName();
 			returnType = method.getReturnType();
@@ -127,14 +131,18 @@ public abstract class AbstractClient extends AbstractClientRemote implements Rpc
 				String parameterTypeName = null;
 				StringBuilder invokePamasSb = new StringBuilder();
 				args.append("	       Object[] args=new Object[" + parameter.length + "];\n");
+				parmaTypes.append("	       String[] parmaTypes=new String[]{");
 				for (int i = 0, size = parameter.length; i < size; i++) {
 					parameterTypeName = parameter[i].getParameterizedType().getTypeName();
 					invokePamasSb.append(parameterTypeName).append(" paras" + i).append(",");
 					args.append("	       args[" + i + "]=paras" + i + ";\n");
+					parmaTypes.append("\""+parameterTypeName+"\",");
 				}
 				args.append("	       rpcRequest.setParams(args);\n");
 				invokePamasSb.deleteCharAt(invokePamasSb.length() - 1);
 				invokePamasStr = invokePamasSb.toString();
+				parmaTypes.deleteCharAt(parmaTypes.length() - 1);
+				parmaTypes.append("};\n");
 			} else {
 				args.append("	       rpcRequest.setParams(null);\n");
 			}
@@ -146,21 +154,21 @@ public abstract class AbstractClient extends AbstractClientRemote implements Rpc
 				}
 				throwsException.deleteCharAt(throwsException.length() - 1);
 			}
-			serviceName = getServiceName(interfaceName, method);
 			clzSb.append("	@Override\n");
 			clzSb.append("	public " + returnTypeCanonicalName + " " + methodName + "(" + invokePamasStr + ")"
 					+ throwsException + "{\n");
 			clzSb.append("	       RpcRequest rpcRequest = new RpcRequest();\n");
-			clzSb.append(
-					"	       String requestId=rpcClient.createRequestId(callHost, port,\"" + serviceName + "\");\n");
+			clzSb.append(parmaTypes);
+			clzSb.append("	       ServiceName serviceName=ServiceName.newServiceName(\""+interfaceName+"\",\""+ methodName+"\",parmaTypes,"+DEFAULT_SERVICE_VERSION+");\n");
+			clzSb.append("	       String requestId=rpcClient.createRequestId(callHost, port,serviceName.toString());\n");
 			clzSb.append("	       rpcRequest.setId(requestId);\n");
-			clzSb.append("	       rpcRequest.setCommand(\"" + serviceName + "\");\n");
+			clzSb.append("	       rpcRequest.setServiceName(serviceName);\n");
 			clzSb.append("	       rpcRequest.setCallHost(callHost);\n");
 			clzSb.append("	       rpcRequest.setCallPort(port);\n");
 			clzSb.append(args);
 			clzSb.append("	       rpcRequest.setAsyCallback(asyCallback);\n");
 			clzSb.append("	       RpcResponse rpcResponse = rpcClient.execute(rpcRequest);\n");
-			if (hasReturnType(method)) {
+			if (ClassUtils.hasReturnType(method)) {
 				clzSb.append("	       if (null == asyCallback) {\n");
 				clzSb.append("	       		return (" + returnTypeCanonicalName + ")rpcResponse.getResult();\n");
 				clzSb.append("	       }else{\n");

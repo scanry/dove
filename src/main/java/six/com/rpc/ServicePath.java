@@ -1,11 +1,18 @@
 package six.com.rpc;
 
+import java.io.Serializable;
+
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月10日 下午6:33:53 rpc 服务路径
  */
-public class ServicePath {
+public class ServicePath implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3140010579417461673L;
 
 	/**
 	 * 服务主机
@@ -17,25 +24,7 @@ public class ServicePath {
 	 */
 	private int port;
 
-	/**
-	 * 服务类名
-	 */
-	private String path;
-
-	/**
-	 * 服务方法
-	 */
-	private String method;
-
-	/**
-	 * 服务方法参数
-	 */
-	private String[] parmasName;
-
-	/**
-	 * 服务版本
-	 */
-	private int version;
+	private transient ServiceName serviceName;
 
 	public String getHost() {
 		return host;
@@ -53,36 +42,19 @@ public class ServicePath {
 		this.port = port;
 	}
 
-	public String getPath() {
-		return path;
+	public ServiceName getServiceName() {
+		return serviceName;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
+	public void setServiceName(ServiceName serviceName) {
+		this.serviceName = serviceName;
 	}
 
-	public String getMethod() {
-		return method;
+	public static ServicePath newServicePath(String host, int port, ServiceName serviceName) {
+		ServicePath servicePath = new ServicePath();
+		servicePath.setHost(host);
+		servicePath.setPort(port);
+		servicePath.setServiceName(serviceName);
+		return servicePath;
 	}
-
-	public void setMethod(String method) {
-		this.method = method;
-	}
-
-	public String[] getParmasName() {
-		return parmasName;
-	}
-
-	public void setParmasName(String[] parmasName) {
-		this.parmasName = parmasName;
-	}
-
-	public int getVersion() {
-		return version;
-	}
-
-	public void setVersion(int version) {
-		this.version = version;
-	}
-
 }

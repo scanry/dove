@@ -27,23 +27,26 @@ import six.com.rpc.util.ExceptionUtils;
 public abstract class AbstractServerRemote extends AbstractRemote<RpcRequest, Void> implements ServerRemote {
 
 	final static Logger log = LoggerFactory.getLogger(AbstractServerRemote.class);
-
+	private String localHost;
+	private int listenPort;
 	private Map<String, ServerRpcConnection> serverRpcConnectionCache = new ConcurrentHashMap<>();
 
-	public AbstractServerRemote(Compiler compiler, RpcSerialize rpcSerialize) {
+	public AbstractServerRemote(String localHost, int listenPort, Compiler compiler, RpcSerialize rpcSerialize) {
 		super(compiler, rpcSerialize);
+		this.localHost = localHost;
+		this.listenPort = listenPort;
 	}
 
 	@Override
 	public Void execute(RpcRequest rpcRequest) {
 		RpcResponse rpcResponse = new RpcResponse();
 		rpcResponse.setId(rpcRequest.getId());
-		WrapperServiceTuple wrapperServiceTuple = getWrapperServiceTuple(rpcRequest.getCommand());
+		WrapperServiceTuple wrapperServiceTuple = getWrapperServiceTuple(rpcRequest.getServiceName());
 		String address = rpcRequest.getServerRpcConnection().toString();
 		if (null != wrapperServiceTuple) {
 			try {
 				wrapperServiceTuple.getExecutorService().submit(() -> {
-					log.debug("server received coommand[" + rpcRequest.getCommand() + "] from:" + address);
+					log.debug("server received coommand[" + rpcRequest.getServiceName() + "] from:" + address);
 					try {
 						wrapperServiceTuple.getHook().beforeHook(rpcRequest.getParams());
 						Object result = wrapperServiceTuple.getWrapperService().invoke(rpcRequest.getParams());
@@ -63,19 +66,29 @@ public abstract class AbstractServerRemote extends AbstractRemote<RpcRequest, Vo
 				// 业务处理线程池满了，拒绝异常
 				rpcResponse.setStatus(RpcResponseStatus.REJECT);
 				String msg = "the service is too busy and reject rpcRequest[" + address + "]:"
-						+ rpcRequest.getCommand();
+						+ rpcRequest.getServiceName();
 				rpcResponse.setMsg(msg);
 				log.error(msg);
 				rpcRequest.getServerRpcConnection().send(rpcResponse);
 			}
 		} else {
 			rpcResponse.setStatus(RpcResponseStatus.UNFOUND_SERVICE);
-			String msg = "unfound service by rpcRequest[" + address + "]:" + rpcRequest.getCommand();
+			String msg = "unfound service by rpcRequest[" + address + "]:" + rpcRequest.getServiceName();
 			rpcResponse.setMsg(msg);
 			log.error(msg);
 			rpcRequest.getServerRpcConnection().send(rpcResponse);
 		}
 		return null;
+	}
+
+	@Override
+	public String getLocalHost() {
+		return localHost;
+	}
+
+	@Override
+	public int getListenPort() {
+		return listenPort;
 	}
 
 	@Override

@@ -1,5 +1,8 @@
 package six.com.rpc.register;
 
+import java.util.List;
+
+import six.com.rpc.ServiceName;
 import six.com.rpc.ServicePath;
 
 /**
@@ -10,13 +13,18 @@ import six.com.rpc.ServicePath;
 public class LocalRpcRegister implements RpcRegister {
 
 	@Override
-	public void register(ServicePath servicePath) {
-		
+	public void deploy(ServiceName serviceName, ServicePath servicePath) {
+
 	}
 
 	@Override
-	public void unRegister(ServicePath servicePath) {
-		
+	public List<ServicePath> list(ServiceName serviceName) {
+		return null;
+	}
+
+	@Override
+	public void undeploy(ServiceName serviceName) {
+
 	}
 
 }

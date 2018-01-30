@@ -32,6 +32,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import six.com.rpc.util.ClassUtils;
+
 /**
  * @author sixliu
  * @date 2017年12月28日

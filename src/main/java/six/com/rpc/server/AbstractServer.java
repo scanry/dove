@@ -20,7 +20,12 @@ import six.com.remote.server.ServerRemote;
 import six.com.rpc.Compiler;
 import six.com.rpc.RpcServer;
 import six.com.rpc.ServiceHook;
+import six.com.rpc.ServiceName;
+import six.com.rpc.ServicePath;
 import six.com.rpc.protocol.RpcSerialize;
+import six.com.rpc.register.LocalRpcRegister;
+import six.com.rpc.register.RpcRegister;
+import six.com.rpc.util.ClassUtils;
 
 /**
  * @author sixliu
@@ -32,12 +37,12 @@ public abstract class AbstractServer extends AbstractServerRemote implements Ser
 
 	final static Logger log = LoggerFactory.getLogger(AbstractServer.class);
 	public static final int DEFAULT_EVENT_LOOP_THREADS = Math.max(1, NettyRuntime.availableProcessors() * 2);
-
-	private Map<String, WrapperServiceTuple> registerMap = new ConcurrentHashMap<>();
+	private Map<ServiceName, WrapperServiceTuple> registerMap = new ConcurrentHashMap<>();
 	private ExecutorService defaultBizExecutorService;
+	private RpcRegister rpcRegister;
 
-	public AbstractServer(Compiler compiler, RpcSerialize rpcSerialize) {
-		super(compiler, rpcSerialize);
+	public AbstractServer(String localHost, int listenPort, Compiler compiler, RpcSerialize rpcSerialize) {
+		super(localHost, listenPort, compiler, rpcSerialize);
 		defaultBizExecutorService = Executors.newFixedThreadPool(DEFAULT_EVENT_LOOP_THREADS, new ThreadFactory() {
 			private AtomicInteger threadIndex = new AtomicInteger(0);
 
@@ -46,10 +51,11 @@ public abstract class AbstractServer extends AbstractServerRemote implements Ser
 				return new Thread(r, "NettyRpcServer-worker-biz-thread_" + this.threadIndex.incrementAndGet());
 			}
 		});
+		rpcRegister = new LocalRpcRegister();
 	}
 
 	@Override
-	public final WrapperServiceTuple getWrapperServiceTuple(String serviceName) {
+	public final WrapperServiceTuple getWrapperServiceTuple(ServiceName serviceName) {
 		return registerMap.get(serviceName);
 	}
 
@@ -92,31 +98,38 @@ public abstract class AbstractServer extends AbstractServerRemote implements Ser
 			throw new RuntimeException("the instance's class[" + instance.getClass().getCanonicalName()
 					+ "] is not public protocolClass ");
 		}
-		String protocolName = protocol.getName();
+		String fullProtocolClassName = protocol.getCanonicalName();
 		Method[] protocolMethods = protocol.getMethods();
 		String packageName = instance.getClass().getPackage().getName();
 		WrapperService wrapperService = null;
-		String fullClassName = null;
+		ServicePath servicePath = null;
+		ServiceName serviceName = null;
 		for (Method protocolMethod : protocolMethods) {
-			final String serviceName = getServiceName(protocolName, protocolMethod);
-			String className = buildServerServiceClassName(instance, protocolMethod);
-			fullClassName = packageName + "." + className;
-			wrapperService = (WrapperService) getCompiler().findOrCompile(fullClassName, new Class<?>[] { protocol },
+			serviceName = newServiceName(fullProtocolClassName, protocolMethod, DEFAULT_SERVICE_VERSION);
+			String proxyClassName = buildServerServiceClassName(instance, protocolMethod);
+			String fullProxyClassName = packageName + "." + proxyClassName;
+			wrapperService = (WrapperService) getCompiler().findOrCompile(fullProxyClassName, new Class<?>[] { protocol },
 					new Object[] { instance }, () -> {
-						return buildServerWrapperServiceCode(protocol, packageName, className, protocolMethod);
+						return buildServerWrapperServiceCode(protocol, packageName, proxyClassName, protocolMethod);
 					});
 			registerMap.put(serviceName, new WrapperServiceTuple(wrapperService, bizExecutorService, hook));
+			servicePath = ServicePath.newServicePath(getLocalHost(), getListenPort(), serviceName);
+			rpcRegister.deploy(serviceName, servicePath);
 		}
+	}
+
+	private static ServiceName newServiceName(String fullClassName, Method protocolMethod, int version) {
+		return ServiceName.newServiceName(fullClassName, protocolMethod.getName(),
+				ClassUtils.parmaTypes(protocolMethod), version);
 	}
 
 	@Override
 	public void unregister(Class<?> protocol) {
 		Objects.requireNonNull(protocol, "protocol must not be null");
-		String protocolName = protocol.getName();
 		Method[] protocolMethods = protocol.getMethods();
+		String fullProtocolClassName = protocol.getCanonicalName();
 		for (Method protocolMethod : protocolMethods) {
-			final String serviceName = getServiceName(protocolName, protocolMethod);
-			registerMap.remove(serviceName);
+			registerMap.remove(newServiceName(fullProtocolClassName, protocolMethod, DEFAULT_SERVICE_VERSION));
 		}
 	}
 
@@ -154,7 +167,7 @@ public abstract class AbstractServer extends AbstractServerRemote implements Ser
 		Parameter[] parameter = instanceMethod.getParameters();
 		StringBuilder clz = new StringBuilder();
 		clz.append("package ").append(packageName).append(";\n");
-		clz.append("import six.com.rpc.common.WrapperService;\n");
+		clz.append("import six.com.rpc.server.WrapperService;\n");
 		clz.append("public class ").append(className).append(" implements WrapperService {\n");
 		clz.append("	private ").append(instanceType).append(" instance;\n");
 		clz.append("	public " + className + "(").append(instanceType).append(" instance").append("){\n");
@@ -173,7 +186,7 @@ public abstract class AbstractServer extends AbstractServerRemote implements Ser
 			invokePamasSb.deleteCharAt(invokePamasSb.length() - 1);
 			invokePamasStr = invokePamasSb.toString();
 		}
-		if (hasReturnType(instanceMethod)) {
+		if (ClassUtils.hasReturnType(instanceMethod)) {
 			clz.append("		return this.instance.").append(method);
 			clz.append("(").append(invokePamasStr).append(");\n");
 		} else {
@@ -189,6 +202,14 @@ public abstract class AbstractServer extends AbstractServerRemote implements Ser
 	@Override
 	public final void shutdown() {
 		doShutdown();
+		registerMap.forEach((key, value) -> {
+			try {
+				rpcRegister.undeploy(key);
+			} catch (Exception e) {
+				log.error("undeploy service[" + key + "] exception", e);
+			}
+		});
+		registerMap.clear();
 	}
 
 	protected abstract void doShutdown();

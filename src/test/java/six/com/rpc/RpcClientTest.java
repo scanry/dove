@@ -27,7 +27,7 @@ public class RpcClientTest{
 		ExecutorService executor = Executors.newFixedThreadPool(20);
 		TestService testServiceSyn = client.lookupService(targetHost, targetPort, TestService.class);
 		TestService testService = client.lookupService(targetHost, targetPort, TestService.class, result -> {
-			System.out.println("result:" + result);
+			System.out.println("result:" + result.getResult());
 			cdl.countDown();
 		});
 		for (int i = 0; i < requestCount; i++) {

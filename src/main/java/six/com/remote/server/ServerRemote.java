@@ -3,6 +3,7 @@ package six.com.remote.server;
 import java.util.function.Function;
 
 import six.com.remote.Remote;
+import six.com.rpc.ServiceName;
 import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.server.WrapperServiceTuple;
 
@@ -15,8 +16,12 @@ import six.com.rpc.server.WrapperServiceTuple;
  */
 public interface ServerRemote extends Remote<RpcRequest, Void> {
 
+	String getLocalHost();
+
+	int getListenPort();
+
 	ServerRpcConnection getServerRpcConnection(String id, Function<String, ServerRpcConnection> mappingFunction);
 
-	WrapperServiceTuple getWrapperServiceTuple(String serviceName);
+	WrapperServiceTuple getWrapperServiceTuple(ServiceName serviceName);
 
 }

@@ -49,10 +49,6 @@ public class NettyRpcServer extends AbstractServer {
 
 	private NettyServerAcceptorIdleStateTrigger idleStateTrigger = new NettyServerAcceptorIdleStateTrigger();
 
-	private String loaclHost;
-
-	private int trafficPort;
-
 	private EventLoopGroup bossGroup;
 
 	private EventLoopGroup workerIoGroup;
@@ -77,9 +73,7 @@ public class NettyRpcServer extends AbstractServer {
 
 	public NettyRpcServer(Compiler compiler, RpcSerialize rpcSerialize, String loaclHost, int trafficPort,
 			int workerIoThreads, int workerCodeThreads, int workerBizThreads) {
-		super(compiler, rpcSerialize);
-		this.loaclHost = loaclHost;
-		this.trafficPort = trafficPort;
+		super(loaclHost, trafficPort, compiler, rpcSerialize);
 		bossGroup = new NioEventLoopGroup(1, new ThreadFactory() {
 			private AtomicInteger threadIndex = new AtomicInteger(0);
 
@@ -120,7 +114,7 @@ public class NettyRpcServer extends AbstractServer {
 
 		serverBootstrap = new ServerBootstrap();
 		serverBootstrap.group(bossGroup, workerIoGroup)
-				.localAddress(new InetSocketAddress(NettyRpcServer.this.loaclHost, NettyRpcServer.this.trafficPort))
+				.localAddress(new InetSocketAddress(getLocalHost(), getListenPort()))
 				.channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
 				.childHandler(new ChannelInitializer<SocketChannel>() {
 					@Override

@@ -1,5 +1,8 @@
 package six.com.rpc.register;
 
+import java.util.List;
+
+import six.com.rpc.ServiceName;
 import six.com.rpc.ServicePath;
 
 /**
@@ -12,17 +15,25 @@ import six.com.rpc.ServicePath;
 public interface RpcRegister {
 
 	/**
-	 * 注册 服务
+	 * 发布服务
 	 * 
 	 * @param servicePath
 	 */
-	public void register(ServicePath servicePath);
+	void deploy(ServiceName serviceName,ServicePath servicePath);
 
 	/**
-	 * 取消注册服务
+	 * 获取指定服务的路径
+	 * 
+	 * @param serviceName
+	 * @return
+	 */
+	List<ServicePath> list(ServiceName serviceName);
+
+	/**
+	 * 取消发布服务
 	 * 
 	 * @param servicePath
 	 */
-	public void unRegister(ServicePath servicePath);
+	void undeploy(ServiceName serviceName);
 
 }
