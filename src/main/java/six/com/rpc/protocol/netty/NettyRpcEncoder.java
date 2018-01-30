@@ -1,4 +1,4 @@
-package six.com.rpc.protocol;
+package six.com.rpc.protocol.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,19 +6,22 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import six.com.rpc.protocol.RpcMsg;
+import six.com.rpc.protocol.RpcProtocol;
+import six.com.rpc.protocol.RpcSerialize;
 
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 下午3:18:19
  */
-public class RpcEncoder extends MessageToByteEncoder<RpcMsg> implements RpcProtocol {
+public class NettyRpcEncoder extends MessageToByteEncoder<RpcMsg> implements RpcProtocol {
 
-	final static Logger log = LoggerFactory.getLogger(RpcEncoder.class);
+	final static Logger log = LoggerFactory.getLogger(NettyRpcEncoder.class);
 	
 	private RpcSerialize rpcSerialize;
 	
-	public RpcEncoder(RpcSerialize rpcSerialize){
+	public NettyRpcEncoder(RpcSerialize rpcSerialize){
 		if(null==rpcSerialize){
 			throw new NullPointerException("rpcSerialize must be not null");
 		}

@@ -7,9 +7,9 @@ import org.junit.Test;
 import six.com.rpc.Compiler;
 import six.com.rpc.TestService;
 import six.com.rpc.TestServiceImpl;
-import six.com.rpc.common.WrapperService;
 import six.com.rpc.compiler.JavaCompilerImpl;
 import six.com.rpc.server.AbstractServer;
+import six.com.rpc.server.WrapperService;
 
 /**
  * @author sixliu

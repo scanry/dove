@@ -1,4 +1,4 @@
-package six.com.rpc.protocol;
+package six.com.rpc.protocol.netty;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -13,6 +13,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import six.com.rpc.exception.RpcSystenExceptions;
+import six.com.rpc.protocol.RpcProtocol;
+import six.com.rpc.protocol.RpcRequest;
+import six.com.rpc.protocol.RpcResponse;
+import six.com.rpc.protocol.RpcSerialize;
 
 /**
  * @author 作者
@@ -30,13 +34,13 @@ import six.com.rpc.exception.RpcSystenExceptions;
  *  <p>结束</p>
  * 
  */
-public class RpcDecoder extends LengthFieldBasedFrameDecoder implements RpcProtocol {
+public class NettyRpcDecoder extends LengthFieldBasedFrameDecoder implements RpcProtocol {
 
-	final static Logger log = LoggerFactory.getLogger(RpcDecoder.class);
+	final static Logger log = LoggerFactory.getLogger(NettyRpcDecoder.class);
 
 	private RpcSerialize rpcSerialize;
 
-	public RpcDecoder(RpcSerialize rpcSerialize) {
+	public NettyRpcDecoder(RpcSerialize rpcSerialize) {
 		super(RpcProtocol.MAX_BODY_SIZE, RpcProtocol.MSG_TYPE, RpcProtocol.BODY_LENGTH);
 		Objects.requireNonNull(rpcSerialize, "rpcSerialize must be not null");
 		this.rpcSerialize = rpcSerialize;

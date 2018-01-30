@@ -1,4 +1,4 @@
-package six.com.rpc.client;
+package six.com.rpc.client.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +12,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import six.com.rpc.RpcClient;
-import six.com.rpc.common.NettyConstant;
 import six.com.rpc.compiler.JavaCompilerImpl;
+import six.com.remote.client.ClientRpcConnection;
 import six.com.rpc.Compiler;
-import six.com.rpc.protocol.RpcDecoder;
-import six.com.rpc.protocol.RpcEncoder;
+import six.com.rpc.client.AbstractClient;
 import six.com.rpc.protocol.RpcSerialize;
+import six.com.rpc.protocol.netty.NettyRpcDecoder;
+import six.com.rpc.protocol.netty.NettyRpcEncoder;
+import six.com.rpc.server.netty.NettyConstant;
 
 /**
  * @author 作者
@@ -52,11 +53,11 @@ import six.com.rpc.protocol.RpcSerialize;
  * 
  * 
  */
-public class NettyRpcCilent extends AbstractClient implements RpcClient {
+public class NettyRpcCilent extends AbstractClient{
 
 	final static Logger log = LoggerFactory.getLogger(NettyRpcCilent.class);
 
-	private ClientAcceptorIdleStateTrigger IdleStateTrigger = new ClientAcceptorIdleStateTrigger();
+	private NettyClientAcceptorIdleStateTrigger IdleStateTrigger = new NettyClientAcceptorIdleStateTrigger();
 
 	private EventLoopGroup workerGroup;
 
@@ -83,8 +84,8 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 	}
 
 	@Override
-	protected RpcConnection newRpcConnection(String id, String callHost, int callPort) {
-		final ClientToServerConnection newClientToServerConnection = new ClientToServerConnection(this, id, callHost,
+	protected ClientRpcConnection newRpcConnection(String callHost, int callPort) {
+		final NettyConnectionImpl newClientToServerConnection = new NettyConnectionImpl(this,callHost,
 				callPort);
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(workerGroup);
@@ -97,8 +98,8 @@ public class NettyRpcCilent extends AbstractClient implements RpcClient {
 			public void initChannel(SocketChannel ch) throws Exception {
 				ch.pipeline().addLast(new IdleStateHandler(0, NettyConstant.WRITER_IDLE_TIME_SECONDES, 0));
 				ch.pipeline().addLast(IdleStateTrigger);
-				ch.pipeline().addLast(new RpcEncoder(getRpcSerialize()));
-				ch.pipeline().addLast(new RpcDecoder(getRpcSerialize()));
+				ch.pipeline().addLast(new NettyRpcEncoder(getRpcSerialize()));
+				ch.pipeline().addLast(new NettyRpcDecoder(getRpcSerialize()));
 				ch.pipeline().addLast(newClientToServerConnection);
 			}
 		});

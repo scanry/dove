@@ -1,4 +1,4 @@
-package six.com.rpc.common;
+package six.com.rpc.server;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -20,8 +20,10 @@ public class WrapperServiceTuple {
 	public WrapperServiceTuple(WrapperService service, ExecutorService executorService,ServiceHook hook) {
 		Objects.requireNonNull(service);
 		Objects.requireNonNull(executorService);
+		Objects.requireNonNull(hook);
 		this.service = service;
 		this.executorService = executorService;
+		this.hook=hook;
 	}
 
 	public WrapperService getWrapperService() {

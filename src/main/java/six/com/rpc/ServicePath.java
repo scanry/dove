@@ -1,4 +1,4 @@
-package six.com.rpc.common;
+package six.com.rpc;
 
 /**
  * @author 作者

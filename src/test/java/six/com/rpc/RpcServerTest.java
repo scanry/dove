@@ -1,6 +1,6 @@
 package six.com.rpc;
 
-import six.com.rpc.server.NettyRpcServer;
+import six.com.rpc.server.netty.NettyRpcServer;
 
 /**   
 * @author liusong  

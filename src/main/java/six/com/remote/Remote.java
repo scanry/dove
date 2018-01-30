@@ -1,4 +1,4 @@
-package six.com.rpc.common;
+package six.com.remote;
 
 import six.com.rpc.Compiler;
 import six.com.rpc.protocol.RpcSerialize;
@@ -8,7 +8,7 @@ import six.com.rpc.protocol.RpcSerialize;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月10日 上午11:17:33 远程调用 接口
  */
-public interface Remote {
+public interface Remote<S, R> {
 
 	/**
 	 * 启动
@@ -19,6 +19,14 @@ public interface Remote {
 	 * 关闭
 	 */
 	void shutdown();
+
+	/**
+	 * 执行
+	 * 
+	 * @param msg
+	 * @return
+	 */
+	R execute(S msg);
 
 	/**
 	 * 获取一个编译器

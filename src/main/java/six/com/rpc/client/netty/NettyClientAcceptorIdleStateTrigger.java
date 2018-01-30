@@ -1,4 +1,4 @@
-package six.com.rpc.server;
+package six.com.rpc.client.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,24 +8,24 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import six.com.rpc.exception.RpcSystenExceptions;
+import six.com.rpc.protocol.HeartbeatMsg;
 
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
- * @date 创建时间：2017年3月22日 下午1:09:17
+ * @date 创建时间：2017年3月22日 下午1:10:36
  */
 @ChannelHandler.Sharable
-public class ServerAcceptorIdleStateTrigger extends ChannelInboundHandlerAdapter {
+public class NettyClientAcceptorIdleStateTrigger extends ChannelInboundHandlerAdapter {
 
-	final static Logger log = LoggerFactory.getLogger(ServerAcceptorIdleStateTrigger.class);
+	final static Logger log = LoggerFactory.getLogger(NettyClientAcceptorIdleStateTrigger.class);
 
 	@Override
 	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
 		if (evt instanceof IdleStateEvent) {
 			IdleState state = ((IdleStateEvent) evt).state();
-			if (state == IdleState.ALL_IDLE) {
-				throw RpcSystenExceptions.READER_IDLE_ERR;
+			if (state == IdleState.WRITER_IDLE) {
+				ctx.writeAndFlush(HeartbeatMsg.heartbeatMsg());
 			}
 		} else {
 			super.userEventTriggered(ctx, evt);

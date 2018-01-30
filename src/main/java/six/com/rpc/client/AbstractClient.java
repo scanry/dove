@@ -1,25 +1,16 @@
 package six.com.rpc.client;
 
-import six.com.rpc.RpcClient;
-import six.com.rpc.common.AbstractRemote;
-import six.com.rpc.common.ClientRemote;
-import six.com.rpc.exception.RpcException;
-import six.com.rpc.exception.RpcInvokeException;
-import six.com.rpc.exception.RpcNotFoundServiceException;
-import six.com.rpc.exception.RpcRejectServiceException;
-import six.com.rpc.exception.RpcTimeoutException;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import six.com.remote.RpcConnection;
+import six.com.remote.client.AbstractClientRemote;
 import six.com.rpc.AsyCallback;
 import six.com.rpc.Compiler;
-import six.com.rpc.protocol.RpcRequest;
-import six.com.rpc.protocol.RpcResponse;
-import six.com.rpc.protocol.RpcResponseStatus;
+import six.com.rpc.RpcClient;
 import six.com.rpc.protocol.RpcSerialize;
 
 /**
@@ -28,25 +19,16 @@ import six.com.rpc.protocol.RpcSerialize;
  * @email 359852326@qq.com
  * @Description
  */
-public abstract class AbstractClient extends AbstractRemote implements ClientRemote, RpcClient {
+public abstract class AbstractClient extends AbstractClientRemote implements RpcClient {
 
 	/**
 	 * 用来存放服务，
 	 */
 	private Map<String, Object> serviceWeakHashMap;
-	/**
-	 * 链接池
-	 */
-	private ConnectionPool<RpcConnection> pool;
-
-	// 请求超时时间 6秒
-	private long callTimeout = 6000;
 
 	public AbstractClient(Compiler wrapperServiceProxyFactory, RpcSerialize rpcSerialize, long callTimeout) {
-		super(wrapperServiceProxyFactory, rpcSerialize);
-		this.callTimeout = callTimeout;
+		super(wrapperServiceProxyFactory, rpcSerialize, callTimeout);
 		this.serviceWeakHashMap = Collections.synchronizedMap(new java.util.WeakHashMap<>());
-		this.pool = new ConnectionPool<>();
 	}
 
 	@Override
@@ -83,79 +65,6 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 		return (T) service;
 	}
 
-	@Override
-	public RpcResponse execute(RpcRequest rpcRequest) {
-		WrapperFuture wrapperFuture = null;
-		RpcConnection clientToServerConnection = null;
-		try {
-			clientToServerConnection = findHealthyRpcConnection(rpcRequest);
-		} catch (Exception e) {
-			if (null != rpcRequest.getAsyCallback()) {
-				rpcRequest.getAsyCallback().execute(RpcResponse.CONNECT_FAILED);
-				return RpcResponse.CONNECT_FAILED;
-			} else {
-				throw new RpcException(e);
-			}
-		}
-		try {
-			wrapperFuture = clientToServerConnection.send(rpcRequest);
-		} catch (Exception e) {
-			clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
-			throw new RpcException(e);
-		}
-		if (!wrapperFuture.hasAsyCallback()) {
-			RpcResponse rpcResponse = wrapperFuture.getResult(callTimeout);
-			if (null == rpcResponse) {
-				clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
-				throw new RpcTimeoutException(
-						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + callTimeout + "]");
-			} else if (rpcResponse.getStatus() == RpcResponseStatus.UNFOUND_SERVICE) {
-				throw new RpcNotFoundServiceException(rpcResponse.getMsg());
-			} else if (rpcResponse.getStatus() == RpcResponseStatus.REJECT) {
-				throw new RpcRejectServiceException(rpcResponse.getMsg());
-			} else if (rpcResponse.getStatus() == RpcResponseStatus.INVOKE_ERR) {
-				throw new RpcInvokeException(rpcResponse.getMsg());
-			} else {
-				return rpcResponse;
-			}
-		} else {
-			return null;
-		}
-	}
-
-	private RpcConnection findHealthyRpcConnection(RpcRequest rpcRequest) {
-		String callHost = rpcRequest.getCallHost();
-		int callPort = rpcRequest.getCallPort();
-		String id = RpcConnection.newConnectionKey(callHost, callPort);
-		RpcConnection clientToServerConnection = pool.find(id);
-		if (null == clientToServerConnection) {
-			synchronized (pool) {
-				clientToServerConnection = pool.find(id);
-				if (null == clientToServerConnection) {
-					clientToServerConnection = newRpcConnection(id,callHost, callPort);
-					pool.put(clientToServerConnection);
-				}
-			}
-		}
-		if (null != clientToServerConnection) {
-			long startTime = System.currentTimeMillis();
-			// 判断是否可用，如果不可用等待可用直到超时
-			while (!clientToServerConnection.available()) {
-				long spendTime = System.currentTimeMillis() - startTime;
-				if (spendTime > getCallTimeout()) {
-					try {
-						clientToServerConnection.close();
-					} catch (Exception e) {
-					}
-					throw new RpcTimeoutException("connected " + callHost + ":" + callPort + " timeout:" + spendTime);
-				}
-			}
-		}
-		return clientToServerConnection;
-	}
-
-	protected abstract RpcConnection newRpcConnection(String id,String callHost, int callPort);
-
 	/**
 	 * rpc service key=目标host+:+目标端口+service class name
 	 * 
@@ -170,12 +79,7 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 	}
 
 	private void checkParma(String targetHost, int targetPort, Class<?> clz) {
-		if (null == targetHost || targetHost.trim().length() == 0) {
-			throw new IllegalArgumentException("this targetHost must be not blank");
-		}
-		if (1 > targetPort || 65535 < targetPort) {
-			throw new IllegalArgumentException("this targetPort[" + targetPort + "] is illegal");
-		}
+		RpcConnection.checkAddress(targetHost, targetPort);
 		if (!clz.isInterface()) {
 			throw new IllegalArgumentException("this clz[" + clz.getName() + "] is not tnterface");
 		}
@@ -291,19 +195,6 @@ public abstract class AbstractClient extends AbstractRemote implements ClientRem
 
 	@Override
 	public final void start() {
-	}
-
-	/**
-	 * 从缓存中移除链接
-	 * 
-	 * @param connection
-	 */
-	public void removeConnection(ClientToServerConnection connection) {
-		pool.remove(connection);
-	}
-
-	public long getCallTimeout() {
-		return callTimeout;
 	}
 
 }

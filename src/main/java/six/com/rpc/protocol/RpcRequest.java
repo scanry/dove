@@ -3,6 +3,7 @@ package six.com.rpc.protocol;
 import java.io.Serializable;
 import java.util.Map;
 
+import six.com.remote.server.ServerRpcConnection;
 import six.com.rpc.AsyCallback;
 
 /**
@@ -15,6 +16,7 @@ public class RpcRequest extends RpcMsg implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1071881684426113946L;
+
 	// 呼叫host
 	private String callHost;
 	// 呼叫host端口
@@ -28,10 +30,13 @@ public class RpcRequest extends RpcMsg implements Serializable {
 	
 	private transient AsyCallback asyCallback;
 	
+	private transient ServerRpcConnection serverRpcConnection;
+	
 	public RpcRequest() {
 		super(RpcProtocol.REQUEST);
 	}
 	
+
 	public String getCallHost() {
 		return callHost;
 	}
@@ -77,6 +82,14 @@ public class RpcRequest extends RpcMsg implements Serializable {
 
 	public void setAsyCallback(AsyCallback asyCallback) {
 		this.asyCallback = asyCallback;
+	}
+	
+	public ServerRpcConnection getServerRpcConnection() {
+		return serverRpcConnection;
+	}
+
+	public void setServerRpcConnection(ServerRpcConnection serverRpcConnection) {
+		this.serverRpcConnection = serverRpcConnection;
 	}
 	
 	public String toString(){

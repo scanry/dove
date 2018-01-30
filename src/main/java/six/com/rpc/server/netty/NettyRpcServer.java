@@ -1,4 +1,4 @@
-package six.com.rpc.server;
+package six.com.rpc.server.netty;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ThreadFactory;
@@ -22,19 +22,18 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import six.com.rpc.Compiler;
-import six.com.rpc.RpcServer;
-import six.com.rpc.common.NettyConstant;
 import six.com.rpc.compiler.JavaCompilerImpl;
-import six.com.rpc.protocol.RpcDecoder;
-import six.com.rpc.protocol.RpcEncoder;
 import six.com.rpc.protocol.RpcSerialize;
+import six.com.rpc.protocol.netty.NettyRpcDecoder;
+import six.com.rpc.protocol.netty.NettyRpcEncoder;
+import six.com.rpc.server.AbstractServer;
 
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:11:44
  */
-public class NettyRpcServer extends AbstractServer implements RpcServer {
+public class NettyRpcServer extends AbstractServer {
 
 	final static Logger log = LoggerFactory.getLogger(NettyRpcServer.class);
 
@@ -48,7 +47,7 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 		}
 	}
 
-	private ServerAcceptorIdleStateTrigger idleStateTrigger = new ServerAcceptorIdleStateTrigger();
+	private NettyServerAcceptorIdleStateTrigger idleStateTrigger = new NettyServerAcceptorIdleStateTrigger();
 
 	private String loaclHost;
 
@@ -129,9 +128,9 @@ public class NettyRpcServer extends AbstractServer implements RpcServer {
 						ch.pipeline().addLast(workerCodeGroup,
 								new IdleStateHandler(0, 0, NettyConstant.ALL_IDLE_TIME_SECONDES));
 						ch.pipeline().addLast(workerCodeGroup, idleStateTrigger);
-						ch.pipeline().addLast(workerCodeGroup, new RpcEncoder(getRpcSerialize()));
-						ch.pipeline().addLast(workerCodeGroup, new RpcDecoder(getRpcSerialize()));
-						ch.pipeline().addLast(workerCodeGroup, new ServerHandler(NettyRpcServer.this));
+						ch.pipeline().addLast(workerCodeGroup, new NettyRpcEncoder(getRpcSerialize()));
+						ch.pipeline().addLast(workerCodeGroup, new NettyRpcDecoder(getRpcSerialize()));
+						ch.pipeline().addLast(workerCodeGroup, new NettyServerHandler(NettyRpcServer.this));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
 				.childOption(ChannelOption.SO_KEEPALIVE, false).option(ChannelOption.TCP_NODELAY, true)

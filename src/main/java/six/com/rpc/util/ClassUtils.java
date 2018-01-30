@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package six.com.rpc.server;
+package six.com.rpc.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

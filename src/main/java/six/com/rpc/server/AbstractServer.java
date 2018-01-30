@@ -11,13 +11,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.util.NettyRuntime;
+import six.com.remote.server.AbstractServerRemote;
+import six.com.remote.server.ServerRemote;
 import six.com.rpc.Compiler;
 import six.com.rpc.RpcServer;
 import six.com.rpc.ServiceHook;
-import six.com.rpc.common.AbstractRemote;
-import six.com.rpc.common.WrapperService;
-import six.com.rpc.common.WrapperServiceTuple;
 import six.com.rpc.protocol.RpcSerialize;
 
 /**
@@ -26,8 +28,9 @@ import six.com.rpc.protocol.RpcSerialize;
  * @email 359852326@qq.com
  * @Description
  */
-public abstract class AbstractServer extends AbstractRemote implements ServerRemote, RpcServer {
+public abstract class AbstractServer extends AbstractServerRemote implements ServerRemote, RpcServer {
 
+	final static Logger log = LoggerFactory.getLogger(AbstractServer.class);
 	public static final int DEFAULT_EVENT_LOOP_THREADS = Math.max(1, NettyRuntime.availableProcessors() * 2);
 
 	private Map<String, WrapperServiceTuple> registerMap = new ConcurrentHashMap<>();
@@ -43,6 +46,11 @@ public abstract class AbstractServer extends AbstractRemote implements ServerRem
 				return new Thread(r, "NettyRpcServer-worker-biz-thread_" + this.threadIndex.incrementAndGet());
 			}
 		});
+	}
+
+	@Override
+	public final WrapperServiceTuple getWrapperServiceTuple(String serviceName) {
+		return registerMap.get(serviceName);
 	}
 
 	@Override
@@ -112,13 +120,7 @@ public abstract class AbstractServer extends AbstractRemote implements ServerRem
 		}
 	}
 
-	@Override
-	public WrapperServiceTuple getWrapperServiceTuple(String rpcServiceName) {
-		return registerMap.get(rpcServiceName);
-	}
-
-	@Override
-	public ExecutorService getDefaultBizExecutorService() {
+	protected ExecutorService getDefaultBizExecutorService() {
 		return defaultBizExecutorService;
 	}
 

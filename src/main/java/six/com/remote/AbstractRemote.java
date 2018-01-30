@@ -1,4 +1,4 @@
-package six.com.rpc.common;
+package six.com.remote;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
@@ -16,7 +16,7 @@ import six.com.rpc.protocol.RpcSerialize;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月10日 上午11:20:06
  */
-public abstract class AbstractRemote implements Remote {
+public abstract class AbstractRemote<S, R> implements Remote<S, R> {
 
 	private static String MAC;
 	private static String PID;

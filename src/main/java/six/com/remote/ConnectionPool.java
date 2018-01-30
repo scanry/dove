@@ -1,4 +1,4 @@
-package six.com.rpc.client;
+package six.com.remote;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -7,6 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import six.com.remote.client.ClientRpcConnection;
 import six.com.rpc.util.StringUtils;
 
 /**
@@ -14,7 +15,7 @@ import six.com.rpc.util.StringUtils;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月21日 上午9:37:23
  */
-public class ConnectionPool<T extends RpcConnection> {
+public class ConnectionPool<T extends ClientRpcConnection> {
 
 	final static Logger log = LoggerFactory.getLogger(ConnectionPool.class);
 	private Map<String, T> connectionMap = new HashMap<>();
