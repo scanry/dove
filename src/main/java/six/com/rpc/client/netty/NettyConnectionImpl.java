@@ -187,7 +187,7 @@ public class NettyConnectionImpl extends AbstractClientRpcConnection implements 
 		if (null != nettyHandler.ctx) {
 			nettyHandler.ctx.close();
 		}
-		getAbstractClient().removeConnection(this);
+		getAbstractClient().removeConnection(getId());
 	}
 
 }

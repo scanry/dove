@@ -3,14 +3,16 @@ package six.com.rpc;
 import java.util.concurrent.ExecutorService;
 
 import six.com.remote.Remote;
+import six.com.remote.server.ServerRpcConnection;
 import six.com.rpc.protocol.RpcRequest;
+import six.com.rpc.protocol.RpcResponse;
 
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:03:05 rpc Server 服务接口
  */
-public interface RpcServer extends Remote<RpcRequest,Void> {
+public interface RpcServer extends Remote<RpcRequest, Void, RpcResponse, Void, ServerRpcConnection> {
 
 	/**
 	 * 注册服务,将使用默认线程池调用服务

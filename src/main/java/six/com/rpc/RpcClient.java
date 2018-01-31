@@ -1,6 +1,8 @@
 package six.com.rpc;
 
 import six.com.remote.Remote;
+import six.com.remote.client.ClientRpcConnection;
+import six.com.rpc.client.WrapperFuture;
 import six.com.rpc.protocol.RpcRequest;
 import six.com.rpc.protocol.RpcResponse;
 
@@ -9,7 +11,7 @@ import six.com.rpc.protocol.RpcResponse;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:03:14 rpc服务调用 客户端
  */
-public interface RpcClient extends Remote<RpcRequest, RpcResponse>{
+public interface RpcClient extends Remote<RpcRequest, RpcResponse, RpcRequest, WrapperFuture, ClientRpcConnection> {
 
 	/**
 	 * 

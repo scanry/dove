@@ -33,14 +33,22 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RpcRequest> 
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, RpcRequest rpcRequest) throws Exception {
-		final String addressAndPort = ctx.channel().remoteAddress().toString();
-		ServerRpcConnection serverRpcConnection = rpcServer.getServerRpcConnection(addressAndPort, newKey -> {
-			String newAddressAndPort = addressAndPort.replace("/", "");
-			String[] addressAndPorts = newAddressAndPort.split(":");
-			return new NettyServerRpcConnection(ctx.channel(), addressAndPorts[0], Integer.valueOf(addressAndPorts[1]));
-		});
+		final String id = getId(ctx);
+		ServerRpcConnection serverRpcConnection = rpcServer.getConnection(id);
+		if (null == serverRpcConnection) {
+			String[] addressAndPorts = id.split(":");
+			serverRpcConnection = new NettyServerRpcConnection(ctx.channel(), addressAndPorts[0],
+					Integer.valueOf(addressAndPorts[1]));
+			rpcServer.addConnection(serverRpcConnection);
+		}
 		rpcRequest.setServerRpcConnection(serverRpcConnection);
 		rpcServer.execute(rpcRequest);
+	}
+
+	private static String getId(ChannelHandlerContext ctx) {
+		String addressAndPort = ctx.channel().remoteAddress().toString();
+		addressAndPort = addressAndPort.replace("/", "");
+		return addressAndPort;
 	}
 
 	@Override
@@ -53,25 +61,22 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RpcRequest> 
 				RpcResponse response = new RpcResponse();
 				response.setMsg("the msg is illegal");
 				ctx.writeAndFlush(response);
-				ctx.close();
 				log.warn("the msg is illegal from channel[" + address + "]");
 			} else if (signalErr.getRpcSystenType() == RpcSystenExceptions.MSG_TOO_BIG) {
 				RpcResponse response = new RpcResponse();
 				response.setMsg("the msg is too big");
 				ctx.writeAndFlush(response);
-				ctx.close();
 				log.warn("the msg is too big from channel[" + address + "]");
 			} else if (signalErr.getRpcSystenType() == RpcSystenExceptions.READER_IDLE) {
-				ch.close();
 				log.warn("the channel[" + address + "] is reader idle and will be close");
 			}
 		} else if (cause instanceof IOException) {
-			ch.close();
 			log.warn("unknow err and close channel[" + address + "]");
 		} else {
-			ch.close();
 			log.warn("unknow err and close channel[" + address + "]", cause);
 		}
+		ch.close();
+		rpcServer.removeConnection(getId(ctx));
 	}
 
 }

@@ -36,9 +36,9 @@ public class ConnectionPool<T extends ClientRpcConnection> {
 		}
 	}
 
-	public void remove(T nettyConnection) {
-		if (null != nettyConnection) {
-			connectionMap.remove(nettyConnection.getId());
+	public void remove(String id) {
+		if (null != id) {
+			connectionMap.remove(id);
 		}
 	}
 

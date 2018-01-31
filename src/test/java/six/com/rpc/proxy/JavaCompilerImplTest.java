@@ -21,13 +21,13 @@ public class JavaCompilerImplTest {
 
 	@Test
 	public void test() {
-		String[] paras = new String[] {"sixliu"};
+		String[] paras = new String[] { "sixliu" };
 		Compiler compiler = new JavaCompilerImpl();
 		Class<?> protocolClass = TestService.class;
 		TestService testService = new TestServiceImpl();
 		try {
-			Method hello = TestService.class.getMethod("say",String.class);
-			String className = AbstractServer.buildServerServiceClassName(testService, hello);
+			Method hello = TestService.class.getMethod("say", String.class);
+			String className = "SSSSSSSSSSSSSSSSSS";
 			String packageName = protocolClass.getPackage().getName();
 			String fullClassName = packageName + "." + className;
 			WrapperService result = (WrapperService) compiler.findOrCompile(fullClassName,

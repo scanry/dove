@@ -108,7 +108,7 @@ public class NettyRpcCilent extends AbstractClient{
 	}
 
 	@Override
-	public void shutdown() {
+	protected void doShutdown() {
 		if (null != workerGroup) {
 			workerGroup.shutdownGracefully();
 		}

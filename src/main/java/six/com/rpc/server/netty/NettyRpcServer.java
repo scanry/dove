@@ -153,7 +153,7 @@ public class NettyRpcServer extends AbstractServer {
 	}
 
 	@Override
-	protected void doShutdown() {
+	protected void destroy() {
 		if (null != bossGroup) {
 			bossGroup.shutdownGracefully();
 		}
