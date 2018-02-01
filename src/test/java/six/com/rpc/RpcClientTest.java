@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-import six.com.rpc.client.netty.NettyRpcCilent;
+import com.six.dove.rpc.client.netty.NettyRpcCilent;
 
 /**
  * @author 作者
@@ -67,7 +67,7 @@ public class RpcClientTest{
 		System.out.println("同步平均消耗时间:" + allTimeSyn.get() / requestCount);
 		System.out.println("异步总消耗时间:" + allTime);
 		System.out.println("异步平均消耗时间:" + allTime.get() / requestCount);
-		client.shutdown();
+		client.stop();
 		executor.shutdown();
 	}
 }

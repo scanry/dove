@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>six</groupId>
-	<artifactId>rpc</artifactId>
+	<artifactId>dove</artifactId>
 	<version>1.0</version>
 	<packaging>jar</packaging>
 
-	<name>rpc</name>
+	<name>dove</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>

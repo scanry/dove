@@ -1,6 +1,7 @@
 package six.com.rpc;
 
-import six.com.rpc.server.netty.NettyRpcServer;
+import com.six.dove.rpc.RpcServer;
+import com.six.dove.rpc.server.netty.NettyRpcServer;
 
 /**   
 * @author liusong  
@@ -11,8 +12,8 @@ public class RpcServerTest {
 
 	public static void main(String[] args) throws InterruptedException {
 		RpcServer server=new NettyRpcServer("127.0.0.1", 80);
-		server.register(TestService.class, new TestServiceImpl());
 		server.start();
+		server.register(TestService.class, new TestServiceImpl());
 		RpcServerTest wait=new RpcServerTest();
 		synchronized (wait) {
 			wait.wait();

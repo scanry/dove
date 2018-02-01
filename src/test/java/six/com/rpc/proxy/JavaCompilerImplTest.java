@@ -4,12 +4,13 @@ import java.lang.reflect.Method;
 
 import org.junit.Test;
 
-import six.com.rpc.Compiler;
+import com.six.dove.remote.compiler.Compiler;
+import com.six.dove.remote.compiler.impl.JavaCompilerImpl;
+import com.six.dove.remote.server.WrapperService;
+import com.six.dove.rpc.server.AbstractServer;
+
 import six.com.rpc.TestService;
 import six.com.rpc.TestServiceImpl;
-import six.com.rpc.compiler.JavaCompilerImpl;
-import six.com.rpc.server.AbstractServer;
-import six.com.rpc.server.WrapperService;
 
 /**
  * @author sixliu

@@ -1,5 +1,7 @@
 package six.com.rpc;
 
+import com.six.dove.rpc.annotation.RpcService;
+
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
