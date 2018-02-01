@@ -5,23 +5,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.six.dove.rpc.client.netty.NettyRpcCilent;
+import com.six.dove.rpc.client.DoveClient;
 
 /**
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年5月10日 下午2:44:35
  */
-public class RpcClientTest{
+public class DoveClientTest {
 
 	static AtomicLong allTimeSyn = new AtomicLong(0);
 	static AtomicLong allTime = new AtomicLong(0);
 
 	public static void main(String[] args) {
-		NettyRpcCilent client = new NettyRpcCilent();
+		DoveClient client = new DoveClient();
 		String targetHost = "127.0.0.1";
 		int targetPort = 80;
-		int requestCount =500;
+		int requestCount = 500;
 		CountDownLatch cdl = new CountDownLatch(requestCount);
 		String name = "six";
 		ExecutorService executor = Executors.newFixedThreadPool(20);
@@ -37,12 +37,12 @@ public class RpcClientTest{
 				System.out.println(result);
 				long endTime = System.currentTimeMillis();
 				long totalTime = endTime - startTime;
-				allTimeSyn.set(allTimeSyn.get()+totalTime);
+				allTimeSyn.set(allTimeSyn.get() + totalTime);
 				System.out.println("消耗时间:" + totalTime);
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				//cdl.countDown();
+				// cdl.countDown();
 			}
 			executor.execute(() -> {
 				try {
@@ -51,7 +51,7 @@ public class RpcClientTest{
 					System.out.println(result);
 					long endTime = System.currentTimeMillis();
 					long totalTime = endTime - startTime;
-					allTime.set(allTime.get()+totalTime);
+					allTime.set(allTime.get() + totalTime);
 					System.out.println("消耗时间:" + totalTime);
 				} catch (Exception e) {
 					e.printStackTrace();

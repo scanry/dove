@@ -2,9 +2,7 @@ package com.six.dove.rpc.server;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -13,18 +11,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.six.dove.common.AbstractService;
 import com.six.dove.remote.ServiceHook;
 import com.six.dove.remote.ServiceName;
 import com.six.dove.remote.ServicePath;
-import com.six.dove.remote.compiler.Compiler;
-import com.six.dove.remote.protocol.RemoteSerialize;
-import com.six.dove.remote.server.AbstractServerRemote;
+import com.six.dove.remote.server.ServerRemote;
 import com.six.dove.remote.server.WrapperService;
 import com.six.dove.remote.server.WrapperServiceTuple;
+import com.six.dove.remote.server.netty.NettyServerRemote;
 import com.six.dove.rpc.RpcServer;
-import com.six.dove.rpc.register.LocalRpcRegister;
-import com.six.dove.rpc.register.RpcRegister;
-import com.six.dove.util.ClassUtils;
+import com.six.dove.rpc.register.DoveRegister;
+import com.six.dove.rpc.register.LocalDoveRegister;
 
 import io.netty.util.NettyRuntime;
 
@@ -34,17 +31,34 @@ import io.netty.util.NettyRuntime;
  * @email 359852326@qq.com
  * @Description
  */
-public abstract class AbstractServer extends AbstractServerRemote implements RpcServer {
+public class DoveServer extends AbstractService implements RpcServer {
 
-	final static Logger log = LoggerFactory.getLogger(AbstractServer.class);
+	final static Logger log = LoggerFactory.getLogger(DoveServer.class);
 	public static final int DEFAULT_EVENT_LOOP_THREADS = Math.max(1, NettyRuntime.availableProcessors() * 2);
-	private Map<ServiceName, WrapperServiceTuple> registerMap = new ConcurrentHashMap<>();
+	private ServerRemote serverRemote;
 	private ExecutorService defaultBizExecutorService;
-	private RpcRegister rpcRegister;
+	private DoveRegister doveRegister;
 
-	public AbstractServer(String name,String localHost, int listenPort, Compiler compiler, RemoteSerialize remoteSerialize) {
-		super(name,localHost, listenPort, compiler, remoteSerialize);
-		defaultBizExecutorService = Executors.newFixedThreadPool(DEFAULT_EVENT_LOOP_THREADS, new ThreadFactory() {
+	public DoveServer(String localHost, int listenPort) {
+		this(new NettyServerRemote(localHost, listenPort));
+	}
+
+	public DoveServer(ServerRemote serverRemote) {
+		this(serverRemote, new LocalDoveRegister(), newDefaultBizExecutorService());
+	}
+
+	public DoveServer(ServerRemote serverRemote, DoveRegister doveRegister, ExecutorService defaultBizExecutorService) {
+		super("dove-server");
+		Objects.requireNonNull(serverRemote);
+		Objects.requireNonNull(doveRegister);
+		Objects.requireNonNull(defaultBizExecutorService);
+		this.serverRemote = serverRemote;
+		this.doveRegister = doveRegister;
+		this.defaultBizExecutorService = defaultBizExecutorService;
+	}
+
+	private static ExecutorService newDefaultBizExecutorService() {
+		return Executors.newFixedThreadPool(DEFAULT_EVENT_LOOP_THREADS, new ThreadFactory() {
 			private AtomicInteger threadIndex = new AtomicInteger(0);
 
 			@Override
@@ -52,12 +66,6 @@ public abstract class AbstractServer extends AbstractServerRemote implements Rpc
 				return new Thread(r, "NettyRpcServer-worker-biz-thread_" + this.threadIndex.incrementAndGet());
 			}
 		});
-		rpcRegister = new LocalRpcRegister();
-	}
-
-	@Override
-	public final WrapperServiceTuple getWrapperServiceTuple(ServiceName serviceName) {
-		return registerMap.get(serviceName);
 	}
 
 	@Override
@@ -99,22 +107,20 @@ public abstract class AbstractServer extends AbstractServerRemote implements Rpc
 		ServicePath servicePath = null;
 		ServiceName serviceName = null;
 		for (Method protocolMethod : protocolMethods) {
-			serviceName = newServiceName(fullProtocolClassName, protocolMethod, DEFAULT_SERVICE_VERSION);
-			String proxyClassName = generateProtocolProxyClassName(protocol, protocolMethod);
+			serviceName = ServerRemote.newServiceName(fullProtocolClassName, protocolMethod,
+					ServerRemote.DEFAULT_SERVICE_VERSION);
+			String proxyClassName = serverRemote.generateProtocolProxyClassName(protocol, protocolMethod);
 			String fullProxyClassName = packageName + "." + proxyClassName;
-			wrapperService = (WrapperService) getCompiler().findOrCompile(fullProxyClassName,
+			wrapperService = (WrapperService) serverRemote.getCompiler().findOrCompile(fullProxyClassName,
 					new Class<?>[] { protocol }, new Object[] { instance }, () -> {
-						return buildServerWrapperServiceCode(protocol, packageName, proxyClassName, protocolMethod);
+						return serverRemote.generateProtocolProxyClassCode(protocol, packageName, proxyClassName,
+								protocolMethod);
 					});
-			registerMap.put(serviceName, new WrapperServiceTuple(wrapperService, bizExecutorService, hook));
-			servicePath = ServicePath.newServicePath(getLocalHost(), getListenPort(), serviceName);
-			rpcRegister.deploy(serviceName, servicePath);
+			serverRemote.registerWrapperServiceTuple(serviceName,
+					new WrapperServiceTuple(wrapperService, bizExecutorService, hook));
+			servicePath = serverRemote.newServicePath(serviceName);
+			doveRegister.deploy(serviceName, servicePath);
 		}
-	}
-
-	private static ServiceName newServiceName(String fullClassName, Method protocolMethod, int version) {
-		return ServiceName.newServiceName(fullClassName, protocolMethod.getName(),
-				ClassUtils.parmaTypes(protocolMethod), version);
 	}
 
 	@Override
@@ -122,8 +128,12 @@ public abstract class AbstractServer extends AbstractServerRemote implements Rpc
 		Objects.requireNonNull(protocol, "protocol must not be null");
 		Method[] protocolMethods = protocol.getMethods();
 		String fullProtocolClassName = protocol.getCanonicalName();
+		ServiceName serviceName = null;
 		for (Method protocolMethod : protocolMethods) {
-			registerMap.remove(newServiceName(fullProtocolClassName, protocolMethod, DEFAULT_SERVICE_VERSION));
+			ServerRemote.newServiceName(fullProtocolClassName, protocolMethod, ServerRemote.DEFAULT_SERVICE_VERSION);
+			serverRemote.removeWrapperServiceTuple(ServerRemote.newServiceName(fullProtocolClassName, protocolMethod,
+					ServerRemote.DEFAULT_SERVICE_VERSION));
+			doveRegister.undeploy(serviceName);
 		}
 	}
 
@@ -132,17 +142,14 @@ public abstract class AbstractServer extends AbstractServerRemote implements Rpc
 	}
 
 	@Override
-	protected final void shutdown() {
-		destroy();
-		registerMap.forEach((key, value) -> {
-			try {
-				rpcRegister.undeploy(key);
-			} catch (Exception e) {
-				log.error("undeploy service[" + key + "] exception", e);
-			}
-		});
-		registerMap.clear();
+	protected void doStart() {
+		serverRemote.start();
+		doveRegister.start();
 	}
 
-	protected abstract void destroy();
+	@Override
+	protected void doStop() {
+		serverRemote.stop();
+		doveRegister.stop();
+	}
 }

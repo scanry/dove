@@ -1,4 +1,4 @@
-package com.six.dove.remote;
+package com.six.dove.remote.connection;
 
 import java.util.HashMap;
 import java.util.Iterator;

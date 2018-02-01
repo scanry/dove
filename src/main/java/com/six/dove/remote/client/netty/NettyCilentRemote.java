@@ -1,16 +1,15 @@
-package com.six.dove.rpc.client.netty;
+package com.six.dove.remote.client.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.six.dove.remote.client.AbstractClientRemote;
 import com.six.dove.remote.client.ClientRemoteConnection;
 import com.six.dove.remote.compiler.Compiler;
 import com.six.dove.remote.compiler.impl.JavaCompilerImpl;
 import com.six.dove.remote.protocol.RemoteSerialize;
-import com.six.dove.rpc.client.AbstractClient;
 import com.six.dove.rpc.protocol.netty.NettyRpcDecoder;
 import com.six.dove.rpc.protocol.netty.NettyRpcEncoder;
-import com.six.dove.rpc.server.netty.NettyConstant;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -54,9 +53,9 @@ import io.netty.handler.timeout.IdleStateHandler;
  * 
  * 
  */
-public class NettyRpcCilent extends AbstractClient {
+public class NettyCilentRemote extends AbstractClientRemote {
 
-	final static Logger log = LoggerFactory.getLogger(NettyRpcCilent.class);
+	final static Logger log = LoggerFactory.getLogger(NettyCilentRemote.class);
 
 	private NettyClientAcceptorIdleStateTrigger IdleStateTrigger = new NettyClientAcceptorIdleStateTrigger();
 
@@ -64,22 +63,24 @@ public class NettyRpcCilent extends AbstractClient {
 
 	private static long DEFAULT_CALL_TIMEOUT = 6000;
 
-	public NettyRpcCilent() {
+	private static int WRITER_IDLE_TIME_SECONDES = 60;// 写操作空闲
+
+	public NettyCilentRemote() {
 		this(0);
 	}
 
-	public NettyRpcCilent(int workerGroupThreads) {
+	public NettyCilentRemote(int workerGroupThreads) {
 		this(new JavaCompilerImpl(), new RemoteSerialize() {
 		}, workerGroupThreads, DEFAULT_CALL_TIMEOUT);
 	}
 
-	public NettyRpcCilent(int workerGroupThreads, long callTimeout) {
+	public NettyCilentRemote(int workerGroupThreads, long callTimeout) {
 		this(new JavaCompilerImpl(), new RemoteSerialize() {
 		}, workerGroupThreads, callTimeout);
 	}
 
-	public NettyRpcCilent(Compiler wrapperServiceProxyFactory, RemoteSerialize remoteSerialize, int workerGroupThreads,
-			long callTimeout) {
+	public NettyCilentRemote(Compiler wrapperServiceProxyFactory, RemoteSerialize remoteSerialize,
+			int workerGroupThreads, long callTimeout) {
 		super("netty-rpc-client", wrapperServiceProxyFactory, remoteSerialize, callTimeout);
 		workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);
 	}
@@ -96,7 +97,7 @@ public class NettyRpcCilent extends AbstractClient {
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
 			public void initChannel(SocketChannel ch) throws Exception {
-				ch.pipeline().addLast(new IdleStateHandler(0, NettyConstant.WRITER_IDLE_TIME_SECONDES, 0));
+				ch.pipeline().addLast(new IdleStateHandler(0, WRITER_IDLE_TIME_SECONDES, 0));
 				ch.pipeline().addLast(IdleStateTrigger);
 				ch.pipeline().addLast(new NettyRpcEncoder(getRemoteSerialize()));
 				ch.pipeline().addLast(new NettyRpcDecoder(getRemoteSerialize()));
@@ -108,7 +109,7 @@ public class NettyRpcCilent extends AbstractClient {
 	}
 
 	@Override
-	protected void shutdown() {
+	protected void stop1() {
 		if (null != workerGroup) {
 			workerGroup.shutdownGracefully();
 		}

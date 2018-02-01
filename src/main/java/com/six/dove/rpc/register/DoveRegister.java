@@ -2,6 +2,7 @@ package com.six.dove.rpc.register;
 
 import java.util.List;
 
+import com.six.dove.common.Service;
 import com.six.dove.remote.ServiceName;
 import com.six.dove.remote.ServicePath;
 
@@ -12,14 +13,14 @@ import com.six.dove.remote.ServicePath;
  * 
  *       rpc服务注册器
  */
-public interface RpcRegister {
+public interface DoveRegister extends Service {
 
 	/**
 	 * 发布服务
 	 * 
 	 * @param servicePath
 	 */
-	void deploy(ServiceName serviceName,ServicePath servicePath);
+	void deploy(ServiceName serviceName, ServicePath servicePath);
 
 	/**
 	 * 获取指定服务的路径
@@ -35,5 +36,4 @@ public interface RpcRegister {
 	 * @param servicePath
 	 */
 	void undeploy(ServiceName serviceName);
-
 }

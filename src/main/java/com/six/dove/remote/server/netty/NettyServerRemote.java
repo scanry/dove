@@ -1,4 +1,4 @@
-package com.six.dove.rpc.server.netty;
+package com.six.dove.remote.server.netty;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ThreadFactory;
@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 import com.six.dove.remote.compiler.Compiler;
 import com.six.dove.remote.compiler.impl.JavaCompilerImpl;
 import com.six.dove.remote.protocol.RemoteSerialize;
+import com.six.dove.remote.server.AbstractServerRemote;
 import com.six.dove.rpc.protocol.netty.NettyRpcDecoder;
 import com.six.dove.rpc.protocol.netty.NettyRpcEncoder;
-import com.six.dove.rpc.server.AbstractServer;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -34,9 +34,9 @@ import io.netty.util.concurrent.DefaultEventExecutorGroup;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:11:44
  */
-public class NettyRpcServer extends AbstractServer {
+public class NettyServerRemote extends AbstractServerRemote {
 
-	final static Logger log = LoggerFactory.getLogger(NettyRpcServer.class);
+	final static Logger log = LoggerFactory.getLogger(NettyServerRemote.class);
 
 	public static final String OS_NAME = System.getProperty("os.name");
 
@@ -47,6 +47,8 @@ public class NettyRpcServer extends AbstractServer {
 			isLinuxPlatform = true;
 		}
 	}
+
+	private final static int ALL_IDLE_TIME_SECONDES = 60;// 读写全部空闲60秒
 
 	private NettyServerAcceptorIdleStateTrigger idleStateTrigger = new NettyServerAcceptorIdleStateTrigger();
 
@@ -62,19 +64,19 @@ public class NettyRpcServer extends AbstractServer {
 
 	private Thread startThread;
 
-	public NettyRpcServer(String loaclHost, int trafficPort) {
+	public NettyServerRemote(String loaclHost, int trafficPort) {
 		this(loaclHost, trafficPort, 0, 0, 0);
 	}
 
-	public NettyRpcServer(String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads,
+	public NettyServerRemote(String loaclHost, int trafficPort, int workerIoThreads, int workerCodeThreads,
 			int workerBizThreads) {
 		this(new JavaCompilerImpl(), new RemoteSerialize() {
 		}, loaclHost, trafficPort, workerIoThreads, workerCodeThreads, workerBizThreads);
 	}
 
-	public NettyRpcServer(Compiler compiler, RemoteSerialize remoteSerialize, String loaclHost, int trafficPort,
+	public NettyServerRemote(Compiler compiler, RemoteSerialize remoteSerialize, String loaclHost, int trafficPort,
 			int workerIoThreads, int workerCodeThreads, int workerBizThreads) {
-		super("netty-rpc-server",loaclHost, trafficPort, compiler, remoteSerialize);
+		super("netty-rpc-server", loaclHost, trafficPort, compiler, remoteSerialize);
 		bossGroup = new NioEventLoopGroup(1, new ThreadFactory() {
 			private AtomicInteger threadIndex = new AtomicInteger(0);
 
@@ -120,12 +122,11 @@ public class NettyRpcServer extends AbstractServer {
 				.childHandler(new ChannelInitializer<SocketChannel>() {
 					@Override
 					public void initChannel(SocketChannel ch) throws Exception {
-						ch.pipeline().addLast(workerCodeGroup,
-								new IdleStateHandler(0, 0, NettyConstant.ALL_IDLE_TIME_SECONDES));
+						ch.pipeline().addLast(workerCodeGroup, new IdleStateHandler(0, 0, ALL_IDLE_TIME_SECONDES));
 						ch.pipeline().addLast(workerCodeGroup, idleStateTrigger);
 						ch.pipeline().addLast(workerCodeGroup, new NettyRpcEncoder(getRemoteSerialize()));
 						ch.pipeline().addLast(workerCodeGroup, new NettyRpcDecoder(getRemoteSerialize()));
-						ch.pipeline().addLast(workerCodeGroup, new NettyServerHandler(NettyRpcServer.this));
+						ch.pipeline().addLast(workerCodeGroup, new NettyServerHandler(NettyServerRemote.this));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
 				.childOption(ChannelOption.SO_KEEPALIVE, false).option(ChannelOption.TCP_NODELAY, true)
@@ -144,17 +145,17 @@ public class NettyRpcServer extends AbstractServer {
 
 	}
 
-	@Override
-	protected void doStart() {
-		startThread.start();
-	}
-
 	private boolean useEpoll() {
 		return isLinuxPlatform && useEpoll && Epoll.isAvailable();
 	}
 
 	@Override
-	protected void destroy() {
+	protected void doStart() {
+		startThread.start();
+	}
+
+	@Override
+	protected void stop2() {
 		if (null != bossGroup) {
 			bossGroup.shutdownGracefully();
 		}

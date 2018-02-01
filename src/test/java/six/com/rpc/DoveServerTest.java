@@ -1,20 +1,19 @@
 package six.com.rpc;
 
-import com.six.dove.rpc.RpcServer;
-import com.six.dove.rpc.server.netty.NettyRpcServer;
+import com.six.dove.rpc.server.DoveServer;
 
 /**   
 * @author liusong  
 * @date   2017年8月10日 
 * @email  359852326@qq.com 
 */
-public class RpcServerTest {
+public class DoveServerTest {
 
 	public static void main(String[] args) throws InterruptedException {
-		RpcServer server=new NettyRpcServer("127.0.0.1", 80);
+		DoveServer server=new DoveServer("127.0.0.1", 80);
 		server.start();
 		server.register(TestService.class, new TestServiceImpl());
-		RpcServerTest wait=new RpcServerTest();
+		DoveServerTest wait=new DoveServerTest();
 		synchronized (wait) {
 			wait.wait();
 		}

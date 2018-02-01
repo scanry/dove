@@ -1,22 +1,20 @@
 package com.six.dove.remote;
 
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.six.dove.common.AbstractService;
 import com.six.dove.remote.client.ClientRemoteConnection;
 import com.six.dove.remote.compiler.Compiler;
+import com.six.dove.remote.connection.ConnectionPool;
+import com.six.dove.remote.connection.RemoteConnection;
+import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteSerialize;
 
 /**
@@ -25,26 +23,17 @@ import com.six.dove.remote.protocol.RemoteSerialize;
  * @date 创建时间：2017年4月10日 上午11:20:06
  * @describe 抽象远程调用端类，
  */
-public abstract class AbstractRemote<R_S, R_R, C_S, C_R, C extends RemoteConnection<C_S, C_R>> extends AbstractService
-		implements Remote<R_S, R_R, C_S, C_R, C> {
+public abstract class AbstractRemote<R_S, R_R, C_S extends RemoteMsg, C_R, C extends RemoteConnection<C_S, C_R>>
+		extends AbstractService implements Remote<R_S, R_R, C_S, C_R, C> {
 
 	final static Logger log = LoggerFactory.getLogger(AbstractRemote.class);
 
-	private static String MAC;
-	private static String PID;
 	public static final int DEFAULT_SERVICE_VERSION = 1;
 	private Map<String, C> connectionPool = new ConcurrentHashMap<>();
 	/**
 	 * 链接池
 	 */
 	ConnectionPool<ClientRemoteConnection> pool;
-
-	static {
-		MAC = getLocalMac();
-		PID = getPid();
-	}
-
-	private static AtomicInteger requestIndex = new AtomicInteger(0);
 	private RemoteSerialize remoteSerialize;
 	private Compiler compiler;
 
@@ -107,40 +96,12 @@ public abstract class AbstractRemote<R_S, R_R, C_S, C_R, C extends RemoteConnect
 	@Override
 	protected final void doStop() {
 		closeExpire(0);
-		doStop();
+		stop1();
 	}
 
-	protected abstract void shutdown();
-
-	protected static void checkParma(String targetHost, int targetPort, Class<?> clz) {
-		RemoteConnection.checkAddress(targetHost, targetPort);
-		if (!clz.isInterface()) {
-			throw new IllegalArgumentException("this clz[" + clz.getName() + "] is not tnterface");
-		}
-	}
+	protected abstract void stop1();
 
 	protected abstract String generateProtocolProxyClassName(Class<?> protocol, Method instanceMethod);
-
-	/**
-	 * 
-	 * @param targetHost
-	 * @param targetPort
-	 * @param serviceName
-	 * @return
-	 */
-	public final String createRequestId(String targetHost, int targetPort, String serviceName) {
-		long threadId = Thread.currentThread().getId();
-		StringBuilder requestId = new StringBuilder();
-		requestId.append(MAC).append("/");
-		requestId.append(PID).append("/");
-		requestId.append(threadId).append("@");
-		requestId.append(targetHost).append(":");
-		requestId.append(targetPort).append("/");
-		requestId.append(serviceName).append("/");
-		requestId.append(System.currentTimeMillis()).append("/");
-		requestId.append(requestIndex.incrementAndGet());
-		return requestId.toString();
-	}
 
 	public static final String getServiceName(String protocolClassName, Method serviceMethod) {
 		Parameter[] parameter = serviceMethod.getParameters();
@@ -156,33 +117,6 @@ public abstract class AbstractRemote<R_S, R_R, C_S, C_R, C extends RemoteConnect
 			}
 		}
 		return serviceName.toString();
-	}
-
-	private static String getLocalMac() {
-		String mac = "";
-		try {
-			InetAddress ia = InetAddress.getLocalHost();
-			byte[] macBytes = NetworkInterface.getByInetAddress(ia).getHardwareAddress();
-			StringBuffer sb = new StringBuffer("");
-			for (int i = 0; i < macBytes.length; i++) {
-				int temp = macBytes[i] & 0xff;
-				String str = Integer.toHexString(temp);
-				if (str.length() == 1) {
-					sb.append("0" + str);
-				} else {
-					sb.append(str);
-				}
-			}
-			mac = sb.toString().toUpperCase();
-		} catch (Exception e) {
-		}
-		return mac;
-	}
-
-	private static String getPid() {
-		String name = ManagementFactory.getRuntimeMXBean().getName();
-		String pid = name.split("@")[0];
-		return pid;
 	}
 
 }

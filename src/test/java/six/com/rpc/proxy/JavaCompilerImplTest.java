@@ -6,8 +6,8 @@ import org.junit.Test;
 
 import com.six.dove.remote.compiler.Compiler;
 import com.six.dove.remote.compiler.impl.JavaCompilerImpl;
+import com.six.dove.remote.server.AbstractServerRemote;
 import com.six.dove.remote.server.WrapperService;
-import com.six.dove.rpc.server.AbstractServer;
 
 import six.com.rpc.TestService;
 import six.com.rpc.TestServiceImpl;
@@ -26,6 +26,7 @@ public class JavaCompilerImplTest {
 		Compiler compiler = new JavaCompilerImpl();
 		Class<?> protocolClass = TestService.class;
 		TestService testService = new TestServiceImpl();
+		TestServerRemote testServerRemote = new TestServerRemote("", "127.0.0.0", 8080);
 		try {
 			Method hello = TestService.class.getMethod("say", String.class);
 			String className = "SSSSSSSSSSSSSSSSSS";
@@ -33,13 +34,31 @@ public class JavaCompilerImplTest {
 			String fullClassName = packageName + "." + className;
 			WrapperService result = (WrapperService) compiler.findOrCompile(fullClassName,
 					new Class<?>[] { protocolClass }, new Object[] { testService }, () -> {
-						return AbstractServer.buildServerWrapperServiceCode(protocolClass, packageName, className,
+						return testServerRemote.generateProtocolProxyClassCode(protocolClass, packageName, className,
 								hello);
 					});
 			System.out.println(result.invoke(paras));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	class TestServerRemote extends AbstractServerRemote {
+
+		public TestServerRemote(String name, String localHost, int listenPort) {
+			super(name, localHost, listenPort);
+		}
+
+		@Override
+		protected void stop2() {
+
+		}
+
+		@Override
+		protected void doStart() {
+
+		}
+
 	}
 
 }

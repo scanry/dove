@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import com.six.dove.remote.AbstractRemoteConnection;
 import com.six.dove.remote.protocol.RemoteRequest;
-import com.six.dove.rpc.client.AbstractClient;
 
 /**
  * @author 作者
@@ -21,12 +20,12 @@ public abstract class AbstractClientRemoteConnection extends AbstractRemoteConne
 
 	final static Logger log = LoggerFactory.getLogger(AbstractClientRemoteConnection.class);
 
-	private AbstractClient rpcClient;
+	private AbstractClientRemote clientRemote;
 	private Map<String, RemoteFuture> requestMap;
 
-	protected AbstractClientRemoteConnection(AbstractClient rpcClient, String host, int port) {
+	protected AbstractClientRemoteConnection(AbstractClientRemote clientRemote, String host, int port) {
 		super(host, port);
-		this.rpcClient = rpcClient;
+		this.clientRemote = clientRemote;
 		this.requestMap = new ConcurrentHashMap<>();
 	}
 
@@ -40,7 +39,7 @@ public abstract class AbstractClientRemoteConnection extends AbstractRemoteConne
 		return requestMap.remove(rpcRequestId);
 	}
 
-	protected AbstractClient getAbstractClient() {
-		return rpcClient;
+	protected AbstractClientRemote getClientRemote() {
+		return clientRemote;
 	}
 }

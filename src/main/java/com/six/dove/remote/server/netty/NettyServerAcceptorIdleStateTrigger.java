@@ -1,4 +1,4 @@
-package com.six.dove.rpc.server.netty;
+package com.six.dove.remote.server.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

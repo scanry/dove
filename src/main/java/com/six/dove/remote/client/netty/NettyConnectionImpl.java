@@ -1,17 +1,17 @@
-package com.six.dove.rpc.client.netty;
+package com.six.dove.remote.client.netty;
 
 import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.six.dove.remote.client.AbstractClientRemote;
 import com.six.dove.remote.client.AbstractClientRemoteConnection;
 import com.six.dove.remote.client.RemoteFuture;
 import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
 import com.six.dove.remote.protocol.RemoteResponseConstants;
-import com.six.dove.rpc.client.AbstractClient;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -33,8 +33,8 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 	final static Logger log = LoggerFactory.getLogger(NettyConnectionImpl.class);
 	private NettyHandler nettyHandler;
 
-	protected NettyConnectionImpl(AbstractClient rpcClient, String host, int port) {
-		super(rpcClient, host, port);
+	protected NettyConnectionImpl(AbstractClientRemote clientRemote, String host, int port) {
+		super(clientRemote, host, port);
 		this.nettyHandler = new NettyHandler();
 	}
 
@@ -160,12 +160,12 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 	}
 
 	@Override
-	public RemoteFuture send(RemoteRequest rpcRequest) {
+	protected RemoteFuture doSend(RemoteRequest rpcRequest) {
 		RemoteFuture remoteFuture = new RemoteFuture(rpcRequest);
 		remoteFuture.setSendTime(System.currentTimeMillis());
 		putRemoteFuture(rpcRequest.getId(), remoteFuture);
 		ChannelFuture channelFuture = nettyHandler.writeAndFlush(rpcRequest);
-		boolean result = channelFuture.awaitUninterruptibly(getAbstractClient().getCallTimeout());
+		boolean result = channelFuture.awaitUninterruptibly(getClientRemote().getCallTimeout());
 		if (result) {
 			channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
 				@Override
@@ -189,7 +189,7 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 		if (null != nettyHandler.ctx) {
 			nettyHandler.ctx.close();
 		}
-		getAbstractClient().removeConnection(getId());
+		getClientRemote().removeConnection(getId());
 	}
 
 }

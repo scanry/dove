@@ -1,4 +1,4 @@
-package com.six.dove.rpc.server.netty;
+package com.six.dove.remote.server.netty;
 
 import java.io.IOException;
 
@@ -9,8 +9,8 @@ import com.six.dove.remote.exception.RemoteSystenException;
 import com.six.dove.remote.exception.RemoteSystenExceptions;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
+import com.six.dove.remote.server.AbstractServerRemote;
 import com.six.dove.remote.server.ServerRemoteConnection;
-import com.six.dove.rpc.server.AbstractServer;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,24 +26,24 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RemoteReques
 
 	final static Logger log = LoggerFactory.getLogger(NettyServerHandler.class);
 
-	private AbstractServer rpcServer;
+	private AbstractServerRemote serverRemote;
 
-	public NettyServerHandler(AbstractServer rpcServer) {
-		this.rpcServer = rpcServer;
+	public NettyServerHandler(AbstractServerRemote serverRemote) {
+		this.serverRemote = serverRemote;
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, RemoteRequest rpcRequest) throws Exception {
 		final String id = getId(ctx);
-		ServerRemoteConnection serverRpcConnection = rpcServer.getConnection(id);
+		ServerRemoteConnection serverRpcConnection = serverRemote.getConnection(id);
 		if (null == serverRpcConnection) {
 			String[] addressAndPorts = id.split(":");
 			serverRpcConnection = new NettyServerRpcConnection(ctx.channel(), addressAndPorts[0],
 					Integer.valueOf(addressAndPorts[1]));
-			rpcServer.addConnection(serverRpcConnection);
+			serverRemote.addConnection(serverRpcConnection);
 		}
 		rpcRequest.setServerRpcConnection(serverRpcConnection);
-		rpcServer.execute(rpcRequest);
+		serverRemote.execute(rpcRequest);
 	}
 
 	private static String getId(ChannelHandlerContext ctx) {
@@ -77,7 +77,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RemoteReques
 			log.warn("unknow err and close channel[" + address + "]", cause);
 		}
 		ch.close();
-		rpcServer.removeConnection(getId(ctx));
+		serverRemote.removeConnection(getId(ctx));
 	}
 
 }

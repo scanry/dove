@@ -2,19 +2,26 @@ package com.six.dove.remote.server;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.six.dove.remote.AbstractRemote;
+import com.six.dove.remote.ServiceName;
+import com.six.dove.remote.ServicePath;
 import com.six.dove.remote.compiler.Compiler;
+import com.six.dove.remote.compiler.impl.JavaCompilerImpl;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
 import com.six.dove.remote.protocol.RemoteResponseState;
 import com.six.dove.remote.protocol.RemoteSerialize;
 import com.six.dove.util.ClassUtils;
 import com.six.dove.util.ExceptionUtils;
+
+import io.netty.util.NettyRuntime;
 
 /**
  * @author:MG01867
@@ -23,21 +30,47 @@ import com.six.dove.util.ExceptionUtils;
  * @version:
  * @describe 抽象的服务调用端类
  */
-public abstract class AbstractServerRemote
-		extends AbstractRemote<RemoteRequest, Void, RemoteResponse, Void, ServerRemoteConnection> implements ServerRemote {
+public abstract class AbstractServerRemote extends
+		AbstractRemote<RemoteRequest, Void, RemoteResponse, Void, ServerRemoteConnection> implements ServerRemote {
 
 	final static Logger log = LoggerFactory.getLogger(AbstractServerRemote.class);
+
+	public static final int DEFAULT_EVENT_LOOP_THREADS = Math.max(1, NettyRuntime.availableProcessors() * 2);
 	private String localHost;
 	private int listenPort;
+	private Map<ServiceName, WrapperServiceTuple> registerMap;
 
-	public AbstractServerRemote(String name,String localHost, int listenPort, Compiler compiler, RemoteSerialize rpcSerialize) {
-		super(name,compiler, rpcSerialize);
+
+	public AbstractServerRemote(String name, String localHost, int listenPort) {
+		this(name, localHost, listenPort, new JavaCompilerImpl(), new RemoteSerialize() {
+		});
+	}
+
+	public AbstractServerRemote(String name, String localHost, int listenPort, Compiler compiler,
+			RemoteSerialize rpcSerialize) {
+		super(name, compiler, rpcSerialize);
 		this.localHost = localHost;
 		this.listenPort = listenPort;
+		this.registerMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
-	public Void execute(RemoteRequest rpcRequest) {
+	public final WrapperServiceTuple getWrapperServiceTuple(ServiceName serviceName) {
+		return registerMap.get(serviceName);
+	}
+
+	@Override
+	public final void registerWrapperServiceTuple(ServiceName serviceName, WrapperServiceTuple wrapperServiceTuple) {
+		registerMap.put(serviceName, wrapperServiceTuple);
+	}
+	
+	@Override
+	public void removeWrapperServiceTuple(ServiceName serviceName) {
+		registerMap.remove(serviceName);
+	}
+	
+	@Override
+	public final Void execute(RemoteRequest rpcRequest) {
 		RemoteResponse rpcResponse = new RemoteResponse();
 		rpcResponse.setId(rpcRequest.getId());
 		WrapperServiceTuple wrapperServiceTuple = getWrapperServiceTuple(rpcRequest.getServiceName());
@@ -80,8 +113,16 @@ public abstract class AbstractServerRemote
 		return null;
 	}
 
+	public ServicePath newServicePath(ServiceName serviceName) {
+		ServicePath servicePath = new ServicePath();
+		servicePath.setHost(localHost);
+		servicePath.setPort(listenPort);
+		servicePath.setServiceName(serviceName);
+		return servicePath;
+	}
+
 	@Override
-	protected String generateProtocolProxyClassName(Class<?> protocol, Method instanceMethod) {
+	public String generateProtocolProxyClassName(Class<?> protocol, Method instanceMethod) {
 		StringBuilder classSb = new StringBuilder();
 		String instanceName = protocol.getSimpleName();
 		String instanceMethodName = instanceMethod.getName();
@@ -104,7 +145,8 @@ public abstract class AbstractServerRemote
 		return classSb.toString();
 	}
 
-	public static String buildServerWrapperServiceCode(Class<?> protocolClass, String packageName, String className,
+	@Override
+	public String generateProtocolProxyClassCode(Class<?> protocolClass, String packageName, String className,
 			Method instanceMethod) {
 		String method = instanceMethod.getName();
 		String instanceType = protocolClass.getCanonicalName();
@@ -112,7 +154,8 @@ public abstract class AbstractServerRemote
 		StringBuilder clz = new StringBuilder();
 		clz.append("package ").append(packageName).append(";\n");
 		clz.append("import ").append(WrapperService.class.getName()).append(";\n");
-		clz.append("public class ").append(className).append(" implements "+WrapperService.class.getSimpleName()+" {\n");
+		clz.append("public class ").append(className)
+				.append(" implements " + WrapperService.class.getSimpleName() + " {\n");
 		clz.append("	private ").append(instanceType).append(" instance;\n");
 		clz.append("	public " + className + "(").append(instanceType).append(" instance").append("){\n");
 		clz.append("		this.instance=instance;\n");
@@ -152,4 +195,11 @@ public abstract class AbstractServerRemote
 	public int getListenPort() {
 		return listenPort;
 	}
+	
+	@Override
+	protected final void stop1() {
+		registerMap.clear();
+	}
+
+	protected abstract void stop2();
 }

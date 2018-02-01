@@ -1,4 +1,4 @@
-package com.six.dove.rpc.server.netty;
+package com.six.dove.remote.server.netty;
 
 import java.util.Objects;
 
@@ -31,7 +31,7 @@ public class NettyServerRpcConnection extends AbstractRemoteConnection<RemoteRes
 	}
 
 	@Override
-	public Void send(RemoteResponse rpcResponse) {
+	protected Void doSend(RemoteResponse rpcResponse) {
 		channel.writeAndFlush(rpcResponse);
 		return null;
 	}

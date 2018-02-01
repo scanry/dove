@@ -1,13 +1,16 @@
 package com.six.dove.remote;
 
+import com.six.dove.remote.connection.RemoteConnection;
+import com.six.dove.remote.protocol.RemoteMsg;
+
 /**
  * @author:MG01867
  * @date:2018年1月30日
  * @E-mail:359852326@qq.com
  * @version:
- * @describe
+ * @describe 抽象的远程调用接口
  */
-public abstract class AbstractRemoteConnection<T, R> implements RemoteConnection<T, R> {
+public abstract class AbstractRemoteConnection<S extends RemoteMsg, R> implements RemoteConnection<S, R> {
 
 	private String id;
 	private String host;
@@ -22,30 +25,36 @@ public abstract class AbstractRemoteConnection<T, R> implements RemoteConnection
 	}
 
 	@Override
-	public String getId() {
+	public final String getId() {
 		return id;
 	}
 
 	@Override
-	public String getHost() {
+	public final String getHost() {
 		return host;
 	}
 
 	@Override
-	public int getPort() {
+	public final int getPort() {
 		return port;
 	}
 
 	@Override
-	public long getLastActivityTime() {
+	public final long getLastActivityTime() {
 		return lastActivityTime;
 	}
 
-	protected void updateLastActivityTime() {
+	@Override
+	public final R send(S msg) {
+		// 记录发送时间
 		this.lastActivityTime = System.currentTimeMillis();
+		return doSend(msg);
 	}
 
-	public String toString() {
+	protected abstract R doSend(S msg);
+
+	@Override
+	public final String toString() {
 		return host + ":" + port;
 	}
 }

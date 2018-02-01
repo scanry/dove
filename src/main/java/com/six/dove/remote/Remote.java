@@ -2,6 +2,8 @@ package com.six.dove.remote;
 
 import com.six.dove.common.Service;
 import com.six.dove.remote.compiler.Compiler;
+import com.six.dove.remote.connection.RemoteConnection;
+import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteSerialize;
 
 /**
@@ -11,7 +13,7 @@ import com.six.dove.remote.protocol.RemoteSerialize;
  * @describe 远程调用端
  *           execute方法的参数R_S,execute方法返回R_R，远程调用端连接发送方法的参数C_S,远程调用端连接发送方法返回C_R
  */
-public interface Remote<R_S, R_R, C_S, C_R, C extends RemoteConnection<C_S, C_R>> extends Service{
+public interface Remote<R_S, R_R, C_S extends RemoteMsg, C_R, C extends RemoteConnection<C_S, C_R>> extends Service {
 
 	/**
 	 * 执行

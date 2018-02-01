@@ -49,12 +49,4 @@ public class ServicePath implements Serializable {
 	public void setServiceName(ServiceName serviceName) {
 		this.serviceName = serviceName;
 	}
-
-	public static ServicePath newServicePath(String host, int port, ServiceName serviceName) {
-		ServicePath servicePath = new ServicePath();
-		servicePath.setHost(host);
-		servicePath.setPort(port);
-		servicePath.setServiceName(serviceName);
-		return servicePath;
-	}
 }
