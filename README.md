@@ -1,25 +1,25 @@
 ---
 ###服务端例子
 ```
-       DoveServer server=new DoveServer("127.0.0.1", 80);
-		server.start();
-		server.register(TestService.class, new TestServiceImpl());
-		DoveServerTest wait=new DoveServerTest();
-		synchronized (wait) {
-			wait.wait();
-		}
+DoveServer server=new DoveServer("127.0.0.1", 80);
+server.start();
+server.register(TestService.class, new TestServiceImpl());
+DoveServerTest wait=new DoveServerTest();
+synchronized (wait) {
+	wait.wait();
+}
 ```
 ###客户端例子
 ```
-       	DoveClient client = new DoveClient();
-		TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
-		String result = testServiceSyn.say("hi");
-		System.out.println(result);
-		TestService testService = client.lookupService("127.0.0.1", 80, TestService.class, msg -> {
-			if(msg.isSuccessed()) {
-				System.out.println("result:" + msg.getResult());
-			}
-		});
+DoveClient client = new DoveClient();
+TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
+String result = testServiceSyn.say("hi");
+System.out.println(result);
+TestService testService = client.lookupService("127.0.0.1", 80, TestService.class, msg -> {
+	if(msg.isSuccessed()) {
+		System.out.println("result:" + msg.getResult());
+	}
+});
 ```
 ---
 ###系统整体类图
