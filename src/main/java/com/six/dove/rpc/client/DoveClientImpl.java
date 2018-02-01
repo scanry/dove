@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.six.dove.common.AbstractService;
 import com.six.dove.remote.AsyCallback;
 import com.six.dove.remote.client.netty.NettyCilentRemote;
-import com.six.dove.rpc.RpcClient;
+import com.six.dove.rpc.DoveClient;
 import com.six.dove.remote.client.ClientRemote;
 
 /**
@@ -14,15 +14,15 @@ import com.six.dove.remote.client.ClientRemote;
  * @email 359852326@qq.com
  * @Description
  */
-public class DoveClient extends AbstractService implements RpcClient {
+public class DoveClientImpl extends AbstractService implements DoveClient {
 
 	private ClientRemote clientRemote;
 
-	public DoveClient() {
+	public DoveClientImpl() {
 		this(new NettyCilentRemote());
 	}
 
-	public DoveClient(ClientRemote clientRemote) {
+	public DoveClientImpl(ClientRemote clientRemote) {
 		super("dove-client");
 		Objects.requireNonNull(clientRemote);
 		this.clientRemote = clientRemote;

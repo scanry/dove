@@ -1,6 +1,6 @@
 package six.com.rpc;
 
-import com.six.dove.rpc.server.DoveServer;
+import com.six.dove.rpc.server.DoveServerImpl;
 
 /**   
 * @author liusong  
@@ -10,7 +10,7 @@ import com.six.dove.rpc.server.DoveServer;
 public class DoveServerTest {
 
 	public static void main(String[] args) throws InterruptedException {
-		DoveServer server=new DoveServer("127.0.0.1", 80);
+		DoveServerImpl server=new DoveServerImpl("127.0.0.1", 80);
 		server.start();
 		server.register(TestService.class, new TestServiceImpl());
 		DoveServerTest wait=new DoveServerTest();

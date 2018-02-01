@@ -10,7 +10,7 @@ import com.six.dove.remote.ServiceHook;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:03:05 rpc Server 服务接口
  */
-public interface RpcServer extends Service{
+public interface DoveServer extends Service{
 
 	/**
 	 * 注册服务,将使用默认线程池调用服务

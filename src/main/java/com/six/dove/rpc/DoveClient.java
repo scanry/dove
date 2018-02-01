@@ -8,7 +8,7 @@ import com.six.dove.remote.AsyCallback;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 上午10:03:14 rpc服务调用 客户端
  */
-public interface RpcClient extends Service{
+public interface DoveClient extends Service{
 
 	/**
 	 * 

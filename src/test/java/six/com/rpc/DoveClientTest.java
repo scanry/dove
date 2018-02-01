@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.six.dove.rpc.client.DoveClient;
+import com.six.dove.rpc.client.DoveClientImpl;
 
 /**
  * @author 作者
@@ -18,7 +18,7 @@ public class DoveClientTest {
 	static AtomicLong allTime = new AtomicLong(0);
 
 	public static void main(String[] args) {
-		DoveClient client = new DoveClient();
+		DoveClientImpl client = new DoveClientImpl();
 		TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
 		String result = testServiceSyn.say("hi");
 		System.out.println(result);

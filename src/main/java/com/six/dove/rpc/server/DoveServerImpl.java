@@ -19,7 +19,7 @@ import com.six.dove.remote.server.ServerRemote;
 import com.six.dove.remote.server.WrapperService;
 import com.six.dove.remote.server.WrapperServiceTuple;
 import com.six.dove.remote.server.netty.NettyServerRemote;
-import com.six.dove.rpc.RpcServer;
+import com.six.dove.rpc.DoveServer;
 import com.six.dove.rpc.register.DoveRegister;
 import com.six.dove.rpc.register.LocalDoveRegister;
 
@@ -31,23 +31,23 @@ import io.netty.util.NettyRuntime;
  * @email 359852326@qq.com
  * @Description
  */
-public class DoveServer extends AbstractService implements RpcServer {
+public class DoveServerImpl extends AbstractService implements DoveServer {
 
-	final static Logger log = LoggerFactory.getLogger(DoveServer.class);
+	final static Logger log = LoggerFactory.getLogger(DoveServerImpl.class);
 	public static final int DEFAULT_EVENT_LOOP_THREADS = Math.max(1, NettyRuntime.availableProcessors() * 2);
 	private ServerRemote serverRemote;
 	private ExecutorService defaultBizExecutorService;
 	private DoveRegister doveRegister;
 
-	public DoveServer(String localHost, int listenPort) {
+	public DoveServerImpl(String localHost, int listenPort) {
 		this(new NettyServerRemote(localHost, listenPort));
 	}
 
-	public DoveServer(ServerRemote serverRemote) {
+	public DoveServerImpl(ServerRemote serverRemote) {
 		this(serverRemote, new LocalDoveRegister(), newDefaultBizExecutorService());
 	}
 
-	public DoveServer(ServerRemote serverRemote, DoveRegister doveRegister, ExecutorService defaultBizExecutorService) {
+	public DoveServerImpl(ServerRemote serverRemote, DoveRegister doveRegister, ExecutorService defaultBizExecutorService) {
 		super("dove-server");
 		Objects.requireNonNull(serverRemote);
 		Objects.requireNonNull(doveRegister);
