@@ -11,7 +11,7 @@ import com.six.dove.remote.protocol.RemoteResponse;
  * @version:
  * @describe
  */
-public interface ClientRemote extends Remote<RemoteRequest, RemoteResponse, RemoteRequest, WrapperFuture, ClientRemoteConnection> {
+public interface ClientRemote extends Remote<RemoteRequest, RemoteResponse, RemoteRequest, RemoteFuture, ClientRemoteConnection> {
 
 	/**
 	 * 远程调用客户端调用服务端超时时间

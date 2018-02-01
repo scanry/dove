@@ -16,27 +16,27 @@ import com.six.dove.rpc.client.AbstractClient;
  * @date 创建时间：2017年3月20日 下午11:05:56
  */
 
-public abstract class AbstractClientRemoteConnection extends AbstractRemoteConnection<RemoteRequest, WrapperFuture>
+public abstract class AbstractClientRemoteConnection extends AbstractRemoteConnection<RemoteRequest, RemoteFuture>
 		implements ClientRemoteConnection {
 
 	final static Logger log = LoggerFactory.getLogger(AbstractClientRemoteConnection.class);
 
 	private AbstractClient rpcClient;
-	private Map<String, WrapperFuture> requestMap;
+	private Map<String, RemoteFuture> requestMap;
 
-	protected AbstractClientRemoteConnection(AbstractClient rpcClient,String host, int port) {
+	protected AbstractClientRemoteConnection(AbstractClient rpcClient, String host, int port) {
 		super(host, port);
 		this.rpcClient = rpcClient;
 		this.requestMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
-	public void putWrapperFuture(String rpcRequestId, WrapperFuture wrapperFuture) {
+	public void putRemoteFuture(String rpcRequestId, RemoteFuture wrapperFuture) {
 		requestMap.put(rpcRequestId, wrapperFuture);
 	}
 
 	@Override
-	public WrapperFuture removeWrapperFuture(String rpcRequestId) {
+	public RemoteFuture removeRemoteFuture(String rpcRequestId) {
 		return requestMap.remove(rpcRequestId);
 	}
 

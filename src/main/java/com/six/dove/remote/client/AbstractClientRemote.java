@@ -31,7 +31,7 @@ import com.six.dove.util.ClassUtils;
  * @describe
  */
 public abstract class AbstractClientRemote
-		extends AbstractRemote<RemoteRequest, RemoteResponse, RemoteRequest, WrapperFuture, ClientRemoteConnection>
+		extends AbstractRemote<RemoteRequest, RemoteResponse, RemoteRequest, RemoteFuture, ClientRemoteConnection>
 		implements ClientRemote {
 
 	// 请求超时时间 6秒
@@ -44,7 +44,7 @@ public abstract class AbstractClientRemote
 
 	@Override
 	public RemoteResponse execute(RemoteRequest rpcRequest) {
-		WrapperFuture wrapperFuture = null;
+		RemoteFuture remoteFuture = null;
 		ClientRemoteConnection clientToServerConnection = null;
 		try {
 			clientToServerConnection = findHealthyRpcConnection(rpcRequest);
@@ -57,15 +57,15 @@ public abstract class AbstractClientRemote
 			}
 		}
 		try {
-			wrapperFuture = clientToServerConnection.send(rpcRequest);
+			remoteFuture = clientToServerConnection.send(rpcRequest);
 		} catch (Exception e) {
-			clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
+			clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
 			throw new RemoteException(e);
 		}
-		if (!wrapperFuture.hasAsyCallback()) {
-			RemoteResponse rpcResponse = wrapperFuture.getResult(getCallTimeout());
+		if (!rpcRequest.isAsy()) {
+			RemoteResponse rpcResponse = remoteFuture.getResult(getCallTimeout());
 			if (null == rpcResponse) {
-				clientToServerConnection.removeWrapperFuture(rpcRequest.getId());
+				clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
 				throw new RemoteTimeoutException(
 						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + getCallTimeout() + "]");
 			} else if (rpcResponse.getStatus() == RemoteResponseState.UNFOUND_SERVICE) {

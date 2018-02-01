@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.six.dove.remote.client.AbstractClientRemoteConnection;
-import com.six.dove.remote.client.WrapperFuture;
+import com.six.dove.remote.client.RemoteFuture;
 import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
@@ -71,11 +71,11 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 		protected void channelRead0(ChannelHandlerContext ctx, RemoteMsg msg) throws Exception {
 			if (msg instanceof RemoteResponse) {
 				RemoteResponse rpcResponse = (RemoteResponse) msg;
-				WrapperFuture wrapperRPCRequest = removeWrapperFuture(rpcResponse.getId());
-				if (null != wrapperRPCRequest) {
-					wrapperRPCRequest.onComplete(rpcResponse, System.currentTimeMillis());
-					log.debug("client received rpcResponse from rpcRequest["
-							+ wrapperRPCRequest.getRPCRequest().toString() + "]");
+				RemoteFuture remoteFuture = removeRemoteFuture(rpcResponse.getId());
+				if (null != remoteFuture) {
+					remoteFuture.onComplete(rpcResponse, System.currentTimeMillis());
+					log.debug("client received rpcResponse from rpcRequest[" + remoteFuture.getRPCRequest().toString()
+							+ "]");
 				}
 			} else {
 				log.error("ClientHandler messageReceived type not support: class=" + msg.getClass());
@@ -160,10 +160,10 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 	}
 
 	@Override
-	public WrapperFuture send(RemoteRequest rpcRequest) {
-		WrapperFuture wrapperFuture = new WrapperFuture(rpcRequest);
-		wrapperFuture.setSendTime(System.currentTimeMillis());
-		putWrapperFuture(rpcRequest.getId(), wrapperFuture);
+	public RemoteFuture send(RemoteRequest rpcRequest) {
+		RemoteFuture remoteFuture = new RemoteFuture(rpcRequest);
+		remoteFuture.setSendTime(System.currentTimeMillis());
+		putRemoteFuture(rpcRequest.getId(), remoteFuture);
 		ChannelFuture channelFuture = nettyHandler.writeAndFlush(rpcRequest);
 		boolean result = channelFuture.awaitUninterruptibly(getAbstractClient().getCallTimeout());
 		if (result) {
@@ -173,15 +173,15 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 					if (future.isSuccess()) {
 						log.debug("send rpcRequest successed");
 					} else {
-						removeWrapperFuture(rpcRequest.getId());
-						wrapperFuture.onComplete(RemoteResponseConstants.SEND_FAILED, System.currentTimeMillis());
+						removeRemoteFuture(rpcRequest.getId());
+						remoteFuture.onComplete(RemoteResponseConstants.SEND_FAILED, System.currentTimeMillis());
 						close();
 						log.debug("send rpcRequest failed");
 					}
 				}
 			});
 		}
-		return wrapperFuture;
+		return remoteFuture;
 	}
 
 	@Override

@@ -84,6 +84,10 @@ public class RemoteRequest extends RemoteMsg implements Serializable {
 	public void setAsyCallback(AsyCallback asyCallback) {
 		this.asyCallback = asyCallback;
 	}
+	
+	public boolean isAsy() {
+		return null!=asyCallback;
+	}
 
 	public ServerRemoteConnection getServerRpcConnection() {
 		return serverRpcConnection;

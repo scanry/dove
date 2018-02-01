@@ -10,10 +10,10 @@ import com.six.dove.remote.protocol.RemoteRequest;
  * @version:
  * @describe 客户端连接
  */
-public interface ClientRemoteConnection extends RemoteConnection<RemoteRequest, WrapperFuture> {
+public interface ClientRemoteConnection extends RemoteConnection<RemoteRequest, RemoteFuture> {
 
-	void putWrapperFuture(String rpcRequestId, WrapperFuture wrapperFuture);
+	void putRemoteFuture(String rpcRequestId, RemoteFuture remoteFuture);
 
-	WrapperFuture removeWrapperFuture(String rpcRequestId);
+	RemoteFuture removeRemoteFuture(String rpcRequestId);
 
 }

@@ -1,5 +1,7 @@
 package com.six.dove.remote.client;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.six.dove.remote.protocol.RemoteRequest;
@@ -10,21 +12,22 @@ import com.six.dove.remote.protocol.RemoteResponse;
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年3月20日 下午10:44:16
  */
-public class WrapperFuture {
+public class RemoteFuture {
 
+	private final RemoteRequest rpcRequest;
+	
+	private final AtomicBoolean isExecuteAsyCallback = new AtomicBoolean(false);
+
+	private final CountDownLatch cdl = new CountDownLatch(1);
+	
 	private volatile long sendTime;
 
 	private volatile long receiveTime;
 
-	private volatile RemoteRequest rpcRequest;
-
 	private volatile RemoteResponse rpcResponse;
 
-	private AtomicBoolean executeAsyCallback = new AtomicBoolean(false);
 
-	private volatile byte isWait = 0;
-
-	public WrapperFuture(RemoteRequest rpcRequest) {
+	public RemoteFuture(RemoteRequest rpcRequest) {
 		this.rpcRequest = rpcRequest;
 	}
 
@@ -44,40 +47,26 @@ public class WrapperFuture {
 		return rpcRequest;
 	}
 
-	public synchronized void onComplete(RemoteResponse response, long receiveTime) {
+	public void onComplete(RemoteResponse response, long receiveTime) {
 		this.rpcResponse = response;
 		this.receiveTime = receiveTime;
-		if (1 == isWait) {
-			synchronized(this) {
-				if (1 == isWait) {
-					this.notify();
-				}
-			}
-		}
-		if (null != rpcRequest.getAsyCallback() && executeAsyCallback.compareAndSet(false, true)) {
+		cdl.countDown();
+		if (null != rpcRequest.getAsyCallback() && isExecuteAsyCallback.compareAndSet(false, true)) {
 			rpcRequest.getAsyCallback().execute(response);
 		}
-	}
-
-	public boolean hasAsyCallback() {
-		return null != rpcRequest.getAsyCallback();
 	}
 
 	public RemoteResponse getResult(long timeout) {
 		if (null != rpcResponse) {
 			return rpcResponse;
 		}
-		synchronized(this) {
-			isWait = 1;
-			try {
-				if (timeout <= 0) {
-					this.wait();
-				} else {
-					this.wait(timeout);
-				}
-			} catch (InterruptedException e) {
+		try {
+			if (timeout <= 0) {
+				cdl.await();
+			} else {
+				cdl.await(timeout, TimeUnit.MILLISECONDS);
 			}
-			isWait = 0;
+		} catch (InterruptedException e) {
 		}
 		return rpcResponse;
 	}
