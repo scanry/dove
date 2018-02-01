@@ -19,21 +19,22 @@ public class DoveClientTest {
 
 	public static void main(String[] args) {
 		DoveClient client = new DoveClient();
-		String targetHost = "127.0.0.1";
-		int targetPort = 80;
+		TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
+		String result = testServiceSyn.say("hi");
+		System.out.println(result);
+		TestService testService = client.lookupService("127.0.0.1", 80, TestService.class, msg -> {
+			if(msg.isSuccessed()) {
+				System.out.println("result:" + msg.getResult());
+			}
+		});
 		int requestCount = 500;
 		CountDownLatch cdl = new CountDownLatch(requestCount);
 		String name = "six";
 		ExecutorService executor = Executors.newFixedThreadPool(20);
-		TestService testServiceSyn = client.lookupService(targetHost, targetPort, TestService.class);
-		TestService testService = client.lookupService(targetHost, targetPort, TestService.class, result -> {
-			System.out.println("result:" + result.getResult());
-			cdl.countDown();
-		});
 		for (int i = 0; i < requestCount; i++) {
 			try {
 				long startTime = System.currentTimeMillis();
-				Object result = testServiceSyn.say(name);
+				result = testServiceSyn.say(name);
 				System.out.println(result);
 				long endTime = System.currentTimeMillis();
 				long totalTime = endTime - startTime;
@@ -47,8 +48,7 @@ public class DoveClientTest {
 			executor.execute(() -> {
 				try {
 					long startTime = System.currentTimeMillis();
-					Object result = testService.say(name);
-					System.out.println(result);
+					System.out.println(testService.say(name));
 					long endTime = System.currentTimeMillis();
 					long totalTime = endTime - startTime;
 					allTime.set(allTime.get() + totalTime);
