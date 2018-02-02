@@ -1,7 +1,6 @@
 package com.six.dove.remote.protocol;
 
 import java.io.Serializable;
-import java.util.Map;
 
 import com.six.dove.remote.AsyCallback;
 import com.six.dove.remote.ServiceName;
@@ -26,8 +25,6 @@ public class RemoteRequest extends RemoteMsg implements Serializable {
 	private ServiceName serviceName;
 	// 呼叫参数
 	private Object[] params;
-
-	private Map<String, Object> paramsMap;
 
 	private transient AsyCallback asyCallback;
 
@@ -67,14 +64,6 @@ public class RemoteRequest extends RemoteMsg implements Serializable {
 
 	public void setParams(Object[] params) {
 		this.params = params;
-	}
-
-	public Map<String, Object> getParamsMap() {
-		return paramsMap;
-	}
-
-	public void setParamsMap(Map<String, Object> paramsMap) {
-		this.paramsMap = paramsMap;
 	}
 
 	public AsyCallback getAsyCallback() {
