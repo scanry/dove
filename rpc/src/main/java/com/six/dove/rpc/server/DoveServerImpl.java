@@ -91,6 +91,14 @@ public class DoveServerImpl extends AbstractService implements DoveServer {
 	}
 
 	@Override
+	public void register(ExecutorService bizExecutorService, Object instance) {
+		DoveService doveService = instance.getClass().getAnnotation(DoveService.class);
+		if (null != doveService) {
+			register(bizExecutorService, doveService.protocol(), instance, doveService.version());
+		}
+	}
+
+	@Override
 	public void register(ExecutorService bizExecutorService, Class<?> protocol, Object instance, String version) {
 		register(bizExecutorService, protocol, instance, version, ServiceHook.DEFAULT_HOOK);
 	}
@@ -143,8 +151,8 @@ public class DoveServerImpl extends AbstractService implements DoveServer {
 		ServiceName serviceName = null;
 		for (Method protocolMethod : protocolMethods) {
 			Remote.newServiceName(fullProtocolClassName, protocolMethod, ServerRemote.DEFAULT_SERVICE_VERSION);
-			serverRemote.removeWrapperServiceTuple(Remote.newServiceName(fullProtocolClassName, protocolMethod,
-					ServerRemote.DEFAULT_SERVICE_VERSION));
+			serverRemote.removeWrapperServiceTuple(
+					Remote.newServiceName(fullProtocolClassName, protocolMethod, ServerRemote.DEFAULT_SERVICE_VERSION));
 			doveRegister.undeploy(serviceName);
 		}
 	}

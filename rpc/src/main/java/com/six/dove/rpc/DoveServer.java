@@ -42,6 +42,16 @@ public interface DoveServer extends Service {
 	 */
 	void register(Class<?> protocol, Object instance, String version, ServiceHook hook);
 
+	
+	/**
+	 * 注册服务,将使用给定的线程池调用服务
+	 * 
+	 * @param bizExecutorService
+	 *            给定的线程池
+	 * @param instance
+	 *            服务协议实现实例 DoveService注解
+	 */
+	void register(ExecutorService bizExecutorService,Object instance);
 	/**
 	 * 注册服务,将使用给定的线程池调用服务
 	 * 
