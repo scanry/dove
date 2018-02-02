@@ -77,7 +77,6 @@ public abstract class AbstractClientRemote
 		return requestId.toString();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getOrNewRemoteProtocolProxy(String callHost, int callPort, Class<?> clz, final AsyCallback asyCallback) {
 		RemoteUtils.checkParma(callHost, callPort, clz);
@@ -86,7 +85,7 @@ public abstract class AbstractClientRemote
 		String fullProxyClassName = packageName + "." + proxyClassName;
 		// ServiceName serviceName=ServiceName.newServiceName(clz.getCanonicalName(),
 		// methodName, parmaTypes, version)
-		return (T) getCompiler().findOrCompile(fullProxyClassName,
+		return getCompiler().findOrCompile(fullProxyClassName,
 				new Class<?>[] { ClientRemote.class, String.class, int.class, AsyCallback.class },
 				new Object[] { this, callHost, callPort, asyCallback }, () -> {
 					return generateProtocolProxyClassCode(clz, packageName, proxyClassName);

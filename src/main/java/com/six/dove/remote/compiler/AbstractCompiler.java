@@ -11,21 +11,22 @@ import java.lang.reflect.Constructor;
  */
 public abstract class AbstractCompiler implements Compiler {
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public final Object findOrCompile(String fullClassName, Class<?>[] parameterTypes, Object[] initargs,
+	public final <T> T findOrCompile(String fullClassName, Class<?>[] parameterTypes, Object[] initargs,
 			CodeBuilder codeBuilder) {
 		try {
 			Class<?> clz = findClass(fullClassName, codeBuilder);
 			Constructor<?> constructor = null;
-			if (null == parameterTypes) {
+			if (null == parameterTypes || parameterTypes.length == 0) {
 				constructor = clz.getConstructor();
 			} else {
 				constructor = clz.getConstructor(parameterTypes);
 			}
-			if (null == initargs) {
-				return constructor.newInstance();
+			if (null == initargs || initargs.length == 0) {
+				return (T) constructor.newInstance();
 			} else {
-				return constructor.newInstance(initargs);
+				return (T) constructor.newInstance(initargs);
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -42,7 +43,7 @@ public abstract class AbstractCompiler implements Compiler {
 					if (null == codeBuilder || null == (code = codeBuilder.build())) {
 						throw new RuntimeException("the codeBuilder or codeBuilder's result is null");
 					}
-					clz = compile(fullClassName, code, this.getClass().getClassLoader());
+					clz = compile(fullClassName, code);
 				}
 			}
 		}
@@ -67,6 +68,6 @@ public abstract class AbstractCompiler implements Compiler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected abstract Class<?> compile(String fullClassName, String code, ClassLoader classLoader) throws Exception;
+	protected abstract Class<?> compile(String fullClassName, String code) throws Exception;
 
 }

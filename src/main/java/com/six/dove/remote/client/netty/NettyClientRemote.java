@@ -53,9 +53,9 @@ import io.netty.handler.timeout.IdleStateHandler;
  * 
  * 
  */
-public class NettyCilentRemote extends AbstractClientRemote {
+public class NettyClientRemote extends AbstractClientRemote {
 
-	final static Logger log = LoggerFactory.getLogger(NettyCilentRemote.class);
+	final static Logger log = LoggerFactory.getLogger(NettyClientRemote.class);
 
 	private NettyClientAcceptorIdleStateTrigger IdleStateTrigger = new NettyClientAcceptorIdleStateTrigger();
 
@@ -65,21 +65,21 @@ public class NettyCilentRemote extends AbstractClientRemote {
 
 	private static int WRITER_IDLE_TIME_SECONDES = 60;// 写操作空闲
 
-	public NettyCilentRemote() {
+	public NettyClientRemote() {
 		this(0);
 	}
 
-	public NettyCilentRemote(int workerGroupThreads) {
+	public NettyClientRemote(int workerGroupThreads) {
 		this(new JavaCompilerImpl(), new RemoteSerialize() {
 		}, workerGroupThreads, DEFAULT_CALL_TIMEOUT);
 	}
 
-	public NettyCilentRemote(int workerGroupThreads, long callTimeout) {
+	public NettyClientRemote(int workerGroupThreads, long callTimeout) {
 		this(new JavaCompilerImpl(), new RemoteSerialize() {
 		}, workerGroupThreads, callTimeout);
 	}
 
-	public NettyCilentRemote(Compiler wrapperServiceProxyFactory, RemoteSerialize remoteSerialize,
+	public NettyClientRemote(Compiler wrapperServiceProxyFactory, RemoteSerialize remoteSerialize,
 			int workerGroupThreads, long callTimeout) {
 		super("netty-rpc-client", wrapperServiceProxyFactory, remoteSerialize, callTimeout);
 		workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);

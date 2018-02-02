@@ -10,6 +10,7 @@ public interface Compiler {
 
 	/**
 	 * 代码构建器
+	 * 
 	 * @author MG01867
 	 *
 	 */
@@ -19,14 +20,17 @@ public interface Compiler {
 	}
 
 	/**
-	 * 获取
+	 * 通过给点的class全名获取Class并实例化,如果没有find到Class时，那么会调用提供的CodeBuilder生成代码并编译
 	 * 
-	 * @param packageName
-	 * @param className
-	 * @param code
+	 * @param fullClassName
+	 *            Class全名
 	 * @param parameterTypes
+	 *            构建方法参数类型
 	 * @param initargs
+	 *            构建方法参数
+	 * @param codeBuilder
+	 *            当没有获取到Class，生成class builder
 	 * @return
 	 */
-	Object findOrCompile(String fullClassName, Class<?>[] parameterTypes, Object[] initargs, CodeBuilder codeBuilder);
+	<T> T findOrCompile(String fullClassName, Class<?>[] parameterTypes, Object[] initargs, CodeBuilder codeBuilder);
 }

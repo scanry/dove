@@ -66,9 +66,9 @@ public class JavaCompilerImpl extends AbstractCompiler {
 	}
 
 	@Override
-	protected Class<?> compile(String fullClassName, String code, ClassLoader classLoader) throws Exception {
-		String packageName =fullClassName.substring(0,fullClassName.lastIndexOf("."));
-		String className = fullClassName.substring(fullClassName.lastIndexOf(".")+1);
+	protected Class<?> compile(String fullClassName, String code) throws Exception {
+		String packageName = fullClassName.substring(0, fullClassName.lastIndexOf("."));
+		String className = fullClassName.substring(fullClassName.lastIndexOf(".") + 1);
 		JavaFileObject javaFileObject = new StringJavaObject(className, code);
 		javaFileManager.putFileForInput(StandardLocation.SOURCE_PATH, packageName,
 				className + ClassUtils.JAVA_EXTENSION, javaFileObject);

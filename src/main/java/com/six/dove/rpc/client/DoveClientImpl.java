@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import com.six.dove.common.AbstractService;
 import com.six.dove.remote.AsyCallback;
-import com.six.dove.remote.client.netty.NettyCilentRemote;
+import com.six.dove.remote.client.netty.NettyClientRemote;
 import com.six.dove.rpc.DoveClient;
 import com.six.dove.remote.client.ClientRemote;
 
@@ -19,7 +19,7 @@ public class DoveClientImpl extends AbstractService implements DoveClient {
 	private ClientRemote clientRemote;
 
 	public DoveClientImpl() {
-		this(new NettyCilentRemote());
+		this(new NettyClientRemote());
 	}
 
 	public DoveClientImpl(ClientRemote clientRemote) {

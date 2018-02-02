@@ -111,7 +111,7 @@ public class DoveServerImpl extends AbstractService implements DoveServer {
 					ServerRemote.DEFAULT_SERVICE_VERSION);
 			String proxyClassName = serverRemote.generateProtocolProxyClassName(protocol, protocolMethod);
 			String fullProxyClassName = packageName + "." + proxyClassName;
-			wrapperService = (WrapperService) serverRemote.getCompiler().findOrCompile(fullProxyClassName,
+			wrapperService =serverRemote.getCompiler().findOrCompile(fullProxyClassName,
 					new Class<?>[] { protocol }, new Object[] { instance }, () -> {
 						return serverRemote.generateProtocolProxyClassCode(protocol, packageName, proxyClassName,
 								protocolMethod);

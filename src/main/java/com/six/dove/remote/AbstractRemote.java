@@ -10,9 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.six.dove.common.AbstractService;
-import com.six.dove.remote.client.ClientRemoteConnection;
 import com.six.dove.remote.compiler.Compiler;
-import com.six.dove.remote.connection.ConnectionPool;
 import com.six.dove.remote.connection.RemoteConnection;
 import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteSerialize;
@@ -30,10 +28,6 @@ public abstract class AbstractRemote<R_S, R_R, C_S extends RemoteMsg, C_R, C ext
 
 	public static final int DEFAULT_SERVICE_VERSION = 1;
 	private Map<String, C> connectionPool = new ConcurrentHashMap<>();
-	/**
-	 * 链接池
-	 */
-	ConnectionPool<ClientRemoteConnection> pool;
 	private RemoteSerialize remoteSerialize;
 	private Compiler compiler;
 
