@@ -1,4 +1,4 @@
----系统功能列表
+###系统功能列表
 1.	远程调用模块(基于netty实现完成)
 2.	rpc客户端基本功能(完成)
 3.	rpc客户端兼容spring(待完成)
@@ -10,18 +10,9 @@
 9.	服务熔断(待完成)
 10.	其他功能以后待加入
 ---
-###服务端例子
-```
-DoveServer server=new DoveServer("127.0.0.1", 80);
-server.start();
-server.register(TestService.class, new TestServiceImpl());
-DoveServerTest wait=new DoveServerTest();
-synchronized (wait) {
-	wait.wait();
-}
----
-###通过手动代码使用
-####服务端例子
+###系统功能使用例子
+##通过手动代码使用
+#服务端例子
 ```
 DoveServerImpl server = new DoveServerImpl("127.0.0.1", 80);
 server.start();
@@ -31,7 +22,7 @@ synchronized (wait) {
 	wait.wait();
 }
 ```
-####客户端例子
+#客户端例子
 ```
 DoveClient client = new DoveClient();
 TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
