@@ -16,7 +16,7 @@
 ---
 一.	通过手动代码使用
 ---
-服务端例子
+1.	服务端例子
 ---
 ```
 DoveServerImpl server = new DoveServerImpl("127.0.0.1", 80);
@@ -28,7 +28,7 @@ synchronized (wait) {
 }
 ```
 ---
-#客户端例子
+2.	客户端例子
 ---
 ```
 DoveClient client = new DoveClient();
@@ -42,8 +42,8 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 });
 ```
 ---
-###基于spring容器,注解方式使用
-####服务端例子
+二. 基于spring容器,注解方式使用
+1.	服务端例子
 ```
 @DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
 public class TestServiceImpl implements TestService {
@@ -54,21 +54,21 @@ public class TestServiceImpl implements TestService {
 	}
 }
 ```
-####客户端例子
+2. 	客户端例子
 ```
-@DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
+@DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION,callTimeout=6000,callback="beanId")
 private TestService testService;
 ```
 ---
-###基于spring容器,配置方式使用
-####服务端例子
+三. 基于spring容器,配置方式使用
+1.	服务端例子
 ```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
 <bean id="testService" class="six.com.rpc.testService.impl.TestServiceImpl"/>
 <dove:Server  interface="six.com.rpc.testService" ref="testService" />
 ```
-####客户端例子
+2.	客户端例子
 ```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
@@ -76,18 +76,18 @@ private TestService testService;
 <dove:client  id="testService" timeout="3000" interface="six.com.rpc.testService" callback="testServiceCallback" />
 ```
 ---
-###基于spring容器,配置方式使用
+###系统图
 ---
-###系统用户场景图
+一. 系统用户场景图
 ![image](https://github.com/scanry/dove/blob/master/design/%E7%B3%BB%E7%BB%9F%E7%94%A8%E6%88%B7%E5%9C%BA%E6%99%AF%E5%9B%BE.png)
 ---
-###客户端调用流程图
+二. 客户端调用流程图
 ![image](https://github.com/scanry/dove/blob/master/design/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%BF%9C%E7%A8%8B%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B%E5%9B%BE.png)
 ---
-###服务端调用流程图
+三. 服务端调用流程图
 ![image](https://github.com/scanry/dove/blob/master/design/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%9C%AC%E5%9C%B0%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B%E5%9B%BE.png)
 ---
-###系统整体类图
+四. 系统整体类图
 ![image](https://github.com/scanry/dove/blob/master/design/%E7%B3%BB%E7%BB%9F%E6%95%B4%E4%BD%93%E7%B1%BB%E5%9B%BE.png)
 ---
            
