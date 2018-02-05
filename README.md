@@ -21,8 +21,17 @@ synchronized (wait) {
 }
 ---
 ###通过手动代码使用
+####服务端例子
 ```
-###客户端例子
+DoveServerImpl server = new DoveServerImpl("127.0.0.1", 80);
+server.start();
+server.register(new TestServiceImpl());
+DoveServerTest wait = new DoveServerTest();
+synchronized (wait) {
+	wait.wait();
+}
+```
+####客户端例子
 ```
 DoveClient client = new DoveClient();
 TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
@@ -36,6 +45,7 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 ```
 ---
 ###基于spring容器,注解方式使用
+####服务端例子
 ```
 @DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
 public class TestServiceImpl implements TestService {
@@ -45,6 +55,27 @@ public class TestServiceImpl implements TestService {
 		return "hi:" + name;
 	}
 }
+```
+####客户端例子
+```
+@DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
+private TestService testService;
+```
+---
+###基于spring容器,配置方式使用
+####服务端例子
+```
+<dove:app name="app" />
+<dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
+<bean id="testService" class="six.com.rpc.testService.impl.TestServiceImpl"/>
+<dove:Server  interface="six.com.rpc.testService" ref="testService" />
+```
+####客户端例子
+```
+<dove:app name="app" />
+<dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
+<bean id="testServiceCallback" class="six.com.rpc.testService.impl.TestServiceCallback"/>
+<dove:client  id="testService" timeout="3000" interface="six.com.rpc.testService" callback="testServiceCallback" />
 ```
 ---
 ###基于spring容器,配置方式使用
