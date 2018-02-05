@@ -20,6 +20,7 @@ synchronized (wait) {
 	wait.wait();
 }
 ---
+###通过手动代码使用
 ```
 ###客户端例子
 ```
@@ -33,6 +34,20 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 	}
 });
 ```
+---
+###基于spring容器,注解方式使用
+```
+@DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
+public class TestServiceImpl implements TestService {
+
+	@Override
+	public String say(String name) {
+		return "hi:" + name;
+	}
+}
+```
+---
+###基于spring容器,配置方式使用
 ---
 ###系统用户场景图
 ![image](https://github.com/scanry/dove/blob/master/design/%E7%B3%BB%E7%BB%9F%E7%94%A8%E6%88%B7%E5%9C%BA%E6%99%AF%E5%9B%BE.png)
