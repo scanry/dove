@@ -71,8 +71,8 @@ private TestService testService;
 ```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
-<bean id="testService" class="six.com.rpc.testService.impl.TestServiceImpl"/>
-<dove:Server  interface="six.com.rpc.testService" ref="testService" />
+<bean id="testService" class="six.com.rpc.TestServiceImpl"/>
+<dove:Server  interface="six.com.rpc.TestService" ref="testService" version="${version}" />
 ```
 ---
 2.	客户端例子
@@ -80,8 +80,8 @@ private TestService testService;
 ```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
-<bean id="testServiceCallback" class="six.com.rpc.testService.impl.TestServiceCallback"/>
-<dove:client  id="testService" timeout="3000" interface="six.com.rpc.testService" callback="testServiceCallback" />
+<bean id="testServiceCallback" class="six.com.rpc.TestServiceCallback"/>
+<dove:client  id="testService" interface="six.com.rpc.TestService" timeout="${timeout}" version="${version}" callback="testServiceCallback" />
 ```
 ---
 ###系统图
