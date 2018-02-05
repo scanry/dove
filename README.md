@@ -14,9 +14,10 @@
 ---
 ###系统功能使用例子
 ---
-##通过手动代码使用
+####通过手动代码使用
 ---
-#服务端例子
+#####服务端例子
+---
 ```
 DoveServerImpl server = new DoveServerImpl("127.0.0.1", 80);
 server.start();
@@ -26,7 +27,9 @@ synchronized (wait) {
 	wait.wait();
 }
 ```
+---
 #客户端例子
+---
 ```
 DoveClient client = new DoveClient();
 TestService testServiceSyn = client.lookupService("127.0.0.1", 80, TestService.class);
