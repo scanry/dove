@@ -33,6 +33,9 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 });
 ```
 ---
+###系统用户场景图
+![image](https://github.com/scanry/dove/blob/master/design/%E7%B3%BB%E7%BB%9F%E7%94%A8%E6%88%B7%E5%9C%BA%E6%99%AF%E5%9B%BE.png)
+---
 ###系统整体类图
 ![image](https://github.com/scanry/dove/blob/master/design/%E7%B3%BB%E7%BB%9F%E6%95%B4%E4%BD%93%E7%B1%BB%E5%9B%BE.png)
 
