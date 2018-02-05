@@ -43,7 +43,9 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 ```
 ---
 二. 基于spring容器,注解方式使用
+---
 1.	服务端例子
+---
 ```
 @DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
 public class TestServiceImpl implements TestService {
@@ -54,21 +56,27 @@ public class TestServiceImpl implements TestService {
 	}
 }
 ```
+---
 2. 	客户端例子
+---
 ```
 @DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION,callTimeout=6000,callback="beanId")
 private TestService testService;
 ```
 ---
 三. 基于spring容器,配置方式使用
+---
 1.	服务端例子
+---
 ```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
 <bean id="testService" class="six.com.rpc.testService.impl.TestServiceImpl"/>
 <dove:Server  interface="six.com.rpc.testService" ref="testService" />
 ```
+---
 2.	客户端例子
+---
 ```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
