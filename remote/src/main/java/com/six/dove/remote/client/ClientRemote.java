@@ -18,12 +18,6 @@ import com.six.dove.remote.protocol.RemoteResponse;
 public interface ClientRemote
 		extends Remote<RemoteRequest, RemoteResponse, RemoteRequest, RemoteFuture, ClientRemoteConnection> {
 
-	/**
-	 * 远程调用客户端调用服务端超时时间
-	 * 
-	 * @return
-	 */
-	long getCallTimeout();
 
 	/**
 	 * 创建请求id

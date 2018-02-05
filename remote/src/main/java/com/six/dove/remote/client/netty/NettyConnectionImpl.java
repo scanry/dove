@@ -165,7 +165,7 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 		remoteFuture.setSendTime(System.currentTimeMillis());
 		putRemoteFuture(rpcRequest.getId(), remoteFuture);
 		ChannelFuture channelFuture = nettyHandler.writeAndFlush(rpcRequest);
-		boolean result = channelFuture.awaitUninterruptibly(getClientRemote().getCallTimeout());
+		boolean result = channelFuture.awaitUninterruptibly(rpcRequest.getCallTimeout());
 		if (result) {
 			channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
 				@Override

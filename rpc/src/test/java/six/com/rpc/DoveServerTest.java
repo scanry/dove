@@ -1,5 +1,8 @@
 package six.com.rpc;
 
+import com.six.dove.remote.Remote;
+import com.six.dove.remote.protocol.RemoteResponse;
+import com.six.dove.rpc.annotation.DoveService;
 import com.six.dove.rpc.server.DoveServerImpl;
 
 /**
@@ -9,6 +12,20 @@ import com.six.dove.rpc.server.DoveServerImpl;
  */
 public class DoveServerTest {
 
+	@DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION,callTimeout=6000,callback="beanId")
+	private TestService testService;
+	
+	public class TestServiceCallBack{
+
+		public void say(String name,RemoteResponse response) {
+			if(response.isSuccessed()) {
+				
+			}
+		}
+		
+	}
+	
+	
 	public static void main(String[] args) throws InterruptedException {
 		DoveServerImpl server = new DoveServerImpl("127.0.0.1", 80);
 		server.start();

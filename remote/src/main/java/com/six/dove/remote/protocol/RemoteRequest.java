@@ -26,6 +26,8 @@ public class RemoteRequest extends RemoteMsg implements Serializable {
 	// 呼叫参数
 	private Object[] params;
 
+	private long callTimeout;
+	
 	private transient AsyCallback asyCallback;
 
 	private transient ServerRemoteConnection serverRpcConnection;
@@ -64,6 +66,14 @@ public class RemoteRequest extends RemoteMsg implements Serializable {
 
 	public void setParams(Object[] params) {
 		this.params = params;
+	}
+	
+	public long getCallTimeout() {
+		return callTimeout;
+	}
+
+	public void setCallTimeout(long callTimeout) {
+		this.callTimeout = callTimeout;
 	}
 
 	public AsyCallback getAsyCallback() {

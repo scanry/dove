@@ -47,13 +47,10 @@ public abstract class AbstractClientRemote
 		PID = getPid();
 	}
 	private static AtomicInteger requestIndex = new AtomicInteger(0);
-	// 请求超时时间 6秒
-	private long callTimeout = 6000;
 	private Map<String, Object> serviceWeakHashMap;
 
-	public AbstractClientRemote(String name, Compiler compiler, RemoteSerialize remoteSerialize, long callTimeout) {
+	public AbstractClientRemote(String name, Compiler compiler, RemoteSerialize remoteSerialize) {
 		super(name, compiler, remoteSerialize);
-		this.callTimeout = callTimeout;
 		this.serviceWeakHashMap = Collections.synchronizedMap(new java.util.WeakHashMap<>());
 	}
 
@@ -144,11 +141,11 @@ public abstract class AbstractClientRemote
 			throw new RemoteSendFailedException(e);
 		}
 		if (!rpcRequest.isAsy()) {
-			RemoteResponse rpcResponse = remoteFuture.getResult(getCallTimeout());
+			RemoteResponse rpcResponse = remoteFuture.getResult(rpcRequest.getCallTimeout());
 			if (null == rpcResponse) {
 				clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
 				throw new RemoteTimeoutException(
-						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + getCallTimeout() + "]");
+						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + rpcRequest.getCallTimeout() + "]");
 			} else if (rpcResponse.getStatus() == RemoteResponseState.SEND_FAILED) {
 				throw new RemoteSendFailedException(rpcResponse.getMsg());
 			} else if (rpcResponse.getStatus() == RemoteResponseState.UNFOUND_SERVICE) {
@@ -179,7 +176,7 @@ public abstract class AbstractClientRemote
 			// 判断是否可用，如果不可用等待可用直到超时
 			while (!connection.available()) {
 				long spendTime = System.currentTimeMillis() - startTime;
-				if (spendTime > getCallTimeout()) {
+				if (spendTime > rpcRequest.getCallTimeout()) {
 					try {
 						connection.close();
 						removeConnection(connection.getId());
@@ -196,11 +193,6 @@ public abstract class AbstractClientRemote
 	protected abstract ClientRemoteConnection newRpcConnection(String callHost, int callPort);
 
 	@Override
-	public long getCallTimeout() {
-		return callTimeout;
-	}
-
-	@Override
 	public String generateProtocolProxyClassName(Class<?> protocol, Method instanceMethod) {
 		StringBuilder classSb = new StringBuilder();
 		String instanceName = protocol.getSimpleName();
@@ -209,6 +201,7 @@ public abstract class AbstractClientRemote
 		return classSb.toString();
 	}
 
+	//TODO 需要设置 remoteRequest 超时时间
 	@Override
 	public String generateProtocolProxyClassCode(Class<?> protocolClass, String packageName, String className,
 			String version) {

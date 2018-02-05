@@ -18,8 +18,15 @@ import com.six.dove.remote.protocol.RemoteSerialize;
  */
 public interface Remote<R_S, R_R, C_S extends RemoteMsg, C_R, C extends RemoteConnection<C_S, C_R>> extends Service {
 
-	
+	/**
+	 * 默认远程调用协议版本
+	 */
 	final String REMOTE_SERVICE_VERSION="1.0.0";
+	
+	/**
+	 * 默认远程调用超时时间
+	 */
+	final long DEFAULT_CALL_TIMEOUT= 6000;
 	/**
 	 * 构建远程调用服务网服务命名
 	 * 

@@ -61,8 +61,6 @@ public class NettyClientRemote extends AbstractClientRemote {
 
 	private EventLoopGroup workerGroup;
 
-	private static long DEFAULT_CALL_TIMEOUT = 6000;
-
 	private static int WRITER_IDLE_TIME_SECONDES = 60;// 写操作空闲
 
 	public NettyClientRemote() {
@@ -71,17 +69,12 @@ public class NettyClientRemote extends AbstractClientRemote {
 
 	public NettyClientRemote(int workerGroupThreads) {
 		this(new JavaCompilerImpl(), new RemoteSerialize() {
-		}, workerGroupThreads, DEFAULT_CALL_TIMEOUT);
-	}
-
-	public NettyClientRemote(int workerGroupThreads, long callTimeout) {
-		this(new JavaCompilerImpl(), new RemoteSerialize() {
-		}, workerGroupThreads, callTimeout);
+		}, workerGroupThreads);
 	}
 
 	public NettyClientRemote(Compiler wrapperServiceProxyFactory, RemoteSerialize remoteSerialize,
-			int workerGroupThreads, long callTimeout) {
-		super("netty-rpc-client", wrapperServiceProxyFactory, remoteSerialize, callTimeout);
+			int workerGroupThreads) {
+		super("netty-rpc-client", wrapperServiceProxyFactory, remoteSerialize);
 		workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);
 	}
 
