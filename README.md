@@ -40,6 +40,9 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 ###客户端调用流程图
 ![image](https://github.com/scanry/dove/blob/master/design/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%BF%9C%E7%A8%8B%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B%E5%9B%BE.png)
 ---
+###服务端调用流程图
+![image](https://github.com/scanry/dove/blob/master/design/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%9C%AC%E5%9C%B0%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B%E5%9B%BE.png)
+---
 ###系统整体类图
 ![image](https://github.com/scanry/dove/blob/master/design/%E7%B3%BB%E7%BB%9F%E6%95%B4%E4%BD%93%E7%B1%BB%E5%9B%BE.png)
 ---
