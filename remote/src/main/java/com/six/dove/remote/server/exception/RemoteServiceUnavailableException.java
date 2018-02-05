@@ -1,4 +1,6 @@
-package com.six.dove.remote.exception;
+package com.six.dove.remote.server.exception;
+
+import com.six.dove.remote.exception.RemoteException;
 
 /**
  * @author:MG01867
