@@ -20,6 +20,7 @@ synchronized (wait) {
 	wait.wait();
 }
 ---
+---
 ###通过手动代码使用
 ####服务端例子
 ```
@@ -44,6 +45,7 @@ TestService testService = client.lookupService("127.0.0.1", 80, TestService.clas
 });
 ```
 ---
+---
 ###基于spring容器,注解方式使用
 ####服务端例子
 ```
@@ -61,6 +63,7 @@ public class TestServiceImpl implements TestService {
 @DoveService(protocol = TestService.class,version=Remote.REMOTE_SERVICE_VERSION)
 private TestService testService;
 ```
+---
 ---
 ###基于spring容器,配置方式使用
 ####服务端例子
