@@ -67,22 +67,18 @@ private TestService testService;
 ---
 ###基于spring容器,配置方式使用
 ####服务端例子
-```
-< ![CDATA[
+```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
 <bean id="testService" class="six.com.rpc.testService.impl.TestServiceImpl"/>
 <dove:Server  interface="six.com.rpc.testService" ref="testService" />
-]]>
 ```
 ####客户端例子
-```
-< ![CDATA[
+```xml
 <dove:app name="app" />
 <dove:zookeeperRegister id="zookeeperRegister" address="127.0.0.1:2181;127.0.0.1:2182;127.0.0.1:2183" />
 <bean id="testServiceCallback" class="six.com.rpc.testService.impl.TestServiceCallback"/>
 <dove:client  id="testService" timeout="3000" interface="six.com.rpc.testService" callback="testServiceCallback" />
-]]>
 ```
 ---
 ###基于spring容器,配置方式使用
