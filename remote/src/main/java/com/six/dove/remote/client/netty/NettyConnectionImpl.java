@@ -11,7 +11,7 @@ import com.six.dove.remote.client.RemoteFuture;
 import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
-import com.six.dove.remote.protocol.RemoteResponseConstants;
+import com.six.dove.remote.protocol.RemoteResponseState;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -174,7 +174,9 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 						log.debug("send rpcRequest successed");
 					} else {
 						removeRemoteFuture(rpcRequest.getId());
-						remoteFuture.onComplete(RemoteResponseConstants.SEND_FAILED, System.currentTimeMillis());
+						RemoteResponse failedRemoteResponse=new RemoteResponse(RemoteResponseState.SEND_FAILED);
+						failedRemoteResponse.setMsg("send rpcRequest["+rpcRequest+"] to ServerRemote["+toString()+"] failed");
+						remoteFuture.onComplete(failedRemoteResponse, System.currentTimeMillis());
 						close();
 						log.debug("send rpcRequest failed");
 					}

@@ -4,8 +4,7 @@ package com.six.dove.remote.exception;
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月6日 下午9:01:34
- * 
- *       Rpc 没有找到服务异常
+ * @describe 远程调用 客户端没用可用服务异常
  */
 public class RemoteUnfoundServiceException extends RemoteException {
 
@@ -16,6 +15,10 @@ public class RemoteUnfoundServiceException extends RemoteException {
 
 	public RemoteUnfoundServiceException(String message) {
 		super(message);
+	}
+
+	public RemoteUnfoundServiceException(Throwable cause) {
+		super(cause);
 	}
 
 	public RemoteUnfoundServiceException(String message, Throwable cause) {

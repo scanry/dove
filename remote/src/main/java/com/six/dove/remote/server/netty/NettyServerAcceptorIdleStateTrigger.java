@@ -3,7 +3,7 @@ package com.six.dove.remote.server.netty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.six.dove.remote.exception.RemoteSystenExceptions;
+import com.six.dove.remote.server.exception.RemoteSystenExceptions;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;

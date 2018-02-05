@@ -4,8 +4,7 @@ package com.six.dove.remote.exception;
  * @author 作者
  * @E-mail: 359852326@qq.com
  * @date 创建时间：2017年4月6日 下午9:00:52
- * 
- *       Rpc 处理超时异常
+ * @describe 远程调用 客户端调用获取结果超时异常
  */
 public class RemoteTimeoutException extends RemoteException {
 
@@ -16,6 +15,10 @@ public class RemoteTimeoutException extends RemoteException {
 
 	public RemoteTimeoutException(String message) {
 		super(message);
+	}
+	
+	public RemoteTimeoutException(Throwable cause) {
+		super(cause);
 	}
 
 	public RemoteTimeoutException(String message, Throwable cause) {

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.six.dove.common.utils.ClassUtils;
+import com.six.dove.common.utils.ExceptionUtils;
 import com.six.dove.remote.AbstractRemote;
 import com.six.dove.remote.AsyCallback;
 import com.six.dove.remote.RemoteUtils;
@@ -21,10 +22,11 @@ import com.six.dove.remote.exception.RemoteException;
 import com.six.dove.remote.exception.RemoteInvokeException;
 import com.six.dove.remote.exception.RemoteUnfoundServiceException;
 import com.six.dove.remote.exception.RemoteRejectException;
+import com.six.dove.remote.exception.RemoteSendFailedException;
 import com.six.dove.remote.exception.RemoteTimeoutException;
+import com.six.dove.remote.exception.RemoteUnconnectException;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
-import com.six.dove.remote.protocol.RemoteResponseConstants;
 import com.six.dove.remote.protocol.RemoteResponseState;
 import com.six.dove.remote.protocol.RemoteSerialize;
 
@@ -125,19 +127,21 @@ public abstract class AbstractClientRemote
 		ClientRemoteConnection clientToServerConnection = null;
 		try {
 			clientToServerConnection = findHealthyRpcConnection(rpcRequest);
-		} catch (Exception e) {
+		} catch (RemoteException remoteException) {
+			//如果是异步调用的话，那么不需要抛出异常。
 			if (null != rpcRequest.getAsyCallback()) {
-				rpcRequest.getAsyCallback().execute(RemoteResponseConstants.CONNECT_FAILED);
-				return RemoteResponseConstants.CONNECT_FAILED;
-			} else {
-				throw new RemoteException(e);
+				RemoteResponse failedRemoteResponse=new RemoteResponse(RemoteResponseState.CONNECT_FAILED);
+				failedRemoteResponse.setMsg(ExceptionUtils.getExceptionMsg(remoteException));
+				rpcRequest.getAsyCallback().execute(failedRemoteResponse);
+			}else {
+				throw remoteException;
 			}
 		}
 		try {
 			remoteFuture = clientToServerConnection.send(rpcRequest);
 		} catch (Exception e) {
 			clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
-			throw new RemoteException(e);
+			throw new RemoteSendFailedException(e);
 		}
 		if (!rpcRequest.isAsy()) {
 			RemoteResponse rpcResponse = remoteFuture.getResult(getCallTimeout());
@@ -145,6 +149,8 @@ public abstract class AbstractClientRemote
 				clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
 				throw new RemoteTimeoutException(
 						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + getCallTimeout() + "]");
+			} else if (rpcResponse.getStatus() == RemoteResponseState.SEND_FAILED) {
+				throw new RemoteSendFailedException(rpcResponse.getMsg());
 			} else if (rpcResponse.getStatus() == RemoteResponseState.UNFOUND_SERVICE) {
 				throw new RemoteUnfoundServiceException(rpcResponse.getMsg());
 			} else if (rpcResponse.getStatus() == RemoteResponseState.REJECT) {
@@ -179,7 +185,7 @@ public abstract class AbstractClientRemote
 						removeConnection(connection.getId());
 					} catch (Exception e) {
 					}
-					throw new RemoteTimeoutException(
+					throw new RemoteUnconnectException(
 							"connected " + callHost + ":" + callPort + " timeout:" + spendTime);
 				}
 			}

@@ -4,7 +4,7 @@ package com.six.dove.remote.exception;
 * @E-mail: 359852326@qq.com 
 * @date 创建时间：2017年4月6日 下午8:59:39 
 */
-public class RemoteException extends RuntimeException{
+public abstract class RemoteException extends RuntimeException{
 
 	/**
 	 * 
