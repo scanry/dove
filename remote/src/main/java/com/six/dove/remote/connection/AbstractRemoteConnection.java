@@ -1,6 +1,10 @@
-package com.six.dove.remote;
+package com.six.dove.remote.connection;
 
-import com.six.dove.remote.connection.RemoteConnection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.six.dove.remote.protocol.RemoteMsg;
 
 /**
@@ -16,12 +20,14 @@ public abstract class AbstractRemoteConnection<S extends RemoteMsg, R> implement
 	private String host;
 	private int port;
 	private long lastActivityTime;
+	private Map<Event, List<Listener<S, R>>> eventMap;
 
 	protected AbstractRemoteConnection(String host, int port) {
 		RemoteConnection.checkAddress(host, port);
 		this.id = RemoteConnection.newConnectionId(host, port);
 		this.host = host;
 		this.port = port;
+		this.eventMap = new HashMap<>();
 	}
 
 	@Override
@@ -42,6 +48,21 @@ public abstract class AbstractRemoteConnection<S extends RemoteMsg, R> implement
 	@Override
 	public final long getLastActivityTime() {
 		return lastActivityTime;
+	}
+
+	@Override
+	public final void happen(Event event) {
+		List<Listener<S, R>> list = eventMap.get(event);
+		if (null != list) {
+			for (Listener<S, R> listener : list) {
+				listener.process(this);
+			}
+		}
+	}
+
+	@Override
+	public final void addListener(Event event, Listener<S, R> listener) {
+		eventMap.computeIfAbsent(event, key -> new ArrayList<>()).add(listener);
 	}
 
 	@Override

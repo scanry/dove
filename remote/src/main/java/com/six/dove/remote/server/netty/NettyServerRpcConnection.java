@@ -2,7 +2,7 @@ package com.six.dove.remote.server.netty;
 
 import java.util.Objects;
 
-import com.six.dove.remote.AbstractRemoteConnection;
+import com.six.dove.remote.connection.AbstractRemoteConnection;
 import com.six.dove.remote.protocol.RemoteResponse;
 import com.six.dove.remote.server.ServerRemoteConnection;
 

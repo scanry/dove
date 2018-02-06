@@ -1,6 +1,6 @@
 package com.six.dove.remote.server;
 
-import com.six.dove.remote.AbstractRemoteConnection;
+import com.six.dove.remote.connection.AbstractRemoteConnection;
 import com.six.dove.remote.protocol.RemoteResponse;
 
 /**

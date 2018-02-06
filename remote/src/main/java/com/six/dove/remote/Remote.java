@@ -90,5 +90,7 @@ public interface Remote<R_S, R_R, C_S extends RemoteMsg, C_R, C extends RemoteCo
 	 * @return 返回已经接入到的连接，有可能为Null
 	 */
 	C removeConnection(String id);
+	
+	
 
 }

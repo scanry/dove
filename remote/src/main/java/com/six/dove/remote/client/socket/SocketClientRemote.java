@@ -20,6 +20,7 @@ import com.six.dove.remote.client.RemoteFuture;
 import com.six.dove.remote.client.AbstractClientRemoteConnection.SendListener;
 import com.six.dove.remote.compiler.Compiler;
 import com.six.dove.remote.compiler.impl.JavaCompilerImpl;
+import com.six.dove.remote.connection.RemoteConnection;
 import com.six.dove.remote.protocol.RemoteProtocol;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
@@ -117,40 +118,37 @@ public class SocketClientRemote extends AbstractClientRemote {
 					byte msgType = inputStream.readByte();
 					if (RemoteProtocol.REQUEST == msgType || RemoteProtocol.RESPONSE == msgType) {
 						int dataLength = inputStream.readInt();
-						if (dataLength <= 0 || dataLength > RemoteProtocol.MAX_BODY_SIZE) {
-
-						}
-						byte[] bodyArray = new byte[dataLength];
-						inputStream.readFully(bodyArray, 0, dataLength);
-						ByteBuffer message = ByteBuffer.wrap(bodyArray);
-						if (RemoteProtocol.REQUEST == msgType) {
-							try {
-								RemoteRequest decodeResult = getRemoteSerialize().unSerialize(message.array(),
-										RemoteRequest.class);
-								System.out.println(decodeResult);
-							} catch (Exception e) {
-								log.error("did not unSerialize rpcRequest from :", e);
-							}
-						} else {
-							try {
-								RemoteResponse decodeResult = getRemoteSerialize().unSerialize(message.array(),
-										RemoteResponse.class);
-								executorService.execute(() -> {
-									RemoteFuture remoteFuture = SocketClientRemoteConnection.this
-											.removeRemoteFuture(decodeResult.getId());
-									if (null != remoteFuture) {
-										remoteFuture.onComplete(decodeResult);
-									}
-								});
-							} catch (Exception e) {
-								log.error("did not unSerialize rpcResponse from ", e);
+						if (dataLength > 0 && dataLength < RemoteProtocol.MAX_BODY_SIZE) {
+							byte[] bodyArray = new byte[dataLength];
+							inputStream.readFully(bodyArray, 0, dataLength);
+							ByteBuffer message = ByteBuffer.wrap(bodyArray);
+							if (RemoteProtocol.REQUEST == msgType) {
+								try {
+									RemoteRequest decodeResult = getRemoteSerialize().unSerialize(message.array(),
+											RemoteRequest.class);
+									System.out.println(decodeResult);
+								} catch (Exception e) {
+									log.error("did not unSerialize rpcRequest from :", e);
+								}
+							} else {
+								try {
+									RemoteResponse decodeResult = getRemoteSerialize().unSerialize(message.array(),
+											RemoteResponse.class);
+									executorService.execute(() -> {
+										RemoteFuture remoteFuture = SocketClientRemoteConnection.this
+												.removeRemoteFuture(decodeResult.getId());
+										if (null != remoteFuture) {
+											remoteFuture.onComplete(decodeResult);
+										}
+									});
+								} catch (Exception e) {
+									log.error("did not unSerialize rpcResponse from ", e);
+								}
 							}
 						}
 					} else {
-						log.error("ClientHandler messageReceived type[" + msgType + "] not support");
+						happen(RemoteConnection.Event.ILLEGAL);
 					}
-					// revQueue.add(decodeResult);
-
 				} catch (IOException e) {
 					log.error("", e);
 				}
@@ -165,8 +163,6 @@ public class SocketClientRemote extends AbstractClientRemote {
 		@Override
 		public synchronized void close() {
 			this.running = false;
-			sendThead.interrupt();
-			revThead.interrupt();
 			if (null != socket) {
 				try {
 					socket.close();
@@ -174,6 +170,9 @@ public class SocketClientRemote extends AbstractClientRemote {
 					log.error("", e);
 				}
 			}
+			sendThead.interrupt();
+			revThead.interrupt();
+			executorService.shutdown();
 		}
 
 		@Override

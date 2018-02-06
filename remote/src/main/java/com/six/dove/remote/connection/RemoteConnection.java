@@ -88,4 +88,17 @@ public interface RemoteConnection<S extends RemoteMsg, R> {
 		}
 	}
 
+	void happen(Event event);
+
+	void addListener(Event event, Listener<S, R> listener);
+
+	enum Event {
+		CONNECTION, CLOSED, ILLEGAL;
+	}
+
+	@FunctionalInterface
+	public interface Listener<S extends RemoteMsg, R> {
+
+		void process(RemoteConnection<S, R> remoteConnection);
+	}
 }

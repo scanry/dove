@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.six.dove.common.utils.ClassUtils;
 import com.six.dove.common.utils.ExceptionUtils;
 import com.six.dove.remote.AbstractRemote;
@@ -40,6 +43,9 @@ import com.six.dove.remote.server.exception.RemoteRejectException;
 public abstract class AbstractClientRemote
 		extends AbstractRemote<RemoteRequest, RemoteResponse, RemoteRequest, RemoteFuture, ClientRemoteConnection>
 		implements ClientRemote {
+
+	final static Logger log = LoggerFactory.getLogger(AbstractClientRemote.class);
+
 	private static String MAC;
 	private static String PID;
 	static {
@@ -77,14 +83,14 @@ public abstract class AbstractClientRemote
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T getOrNewRemoteProtocolProxy(String callHost, int callPort, Class<?> clz,String version) {
+	public <T> T getOrNewRemoteProtocolProxy(String callHost, int callPort, Class<?> clz, String version) {
 		String key = serviceKey(callHost, callPort, clz);
 		Object service = serviceWeakHashMap.computeIfAbsent(key, mapkey -> {
-			return getOrNewRemoteProtocolProxy(callHost, callPort, clz, version,null);
+			return getOrNewRemoteProtocolProxy(callHost, callPort, clz, version, null);
 		});
 		return (T) service;
 	}
-	
+
 	@Override
 	public <T> T getOrNewRemoteProtocolProxy(String callHost, int callPort, Class<?> clz, String version,
 			final AsyCallback asyCallback) {
@@ -100,7 +106,7 @@ public abstract class AbstractClientRemote
 					return generateProtocolProxyClassCode(clz, packageName, proxyClassName, version);
 				});
 	}
-	
+
 	/**
 	 * rpc service key=目标host+:+目标端口+service class name
 	 * 
@@ -125,12 +131,12 @@ public abstract class AbstractClientRemote
 		try {
 			clientToServerConnection = findHealthyRpcConnection(rpcRequest);
 		} catch (RemoteException remoteException) {
-			//如果是异步调用的话，那么不需要抛出异常。
+			// 如果是异步调用的话，那么不需要抛出异常。
 			if (null != rpcRequest.getAsyCallback()) {
-				RemoteResponse failedRemoteResponse=new RemoteResponse(RemoteResponseState.CONNECT_FAILED);
+				RemoteResponse failedRemoteResponse = new RemoteResponse(RemoteResponseState.CONNECT_FAILED);
 				failedRemoteResponse.setMsg(ExceptionUtils.getExceptionMsg(remoteException));
 				rpcRequest.getAsyCallback().execute(failedRemoteResponse);
-			}else {
+			} else {
 				throw remoteException;
 			}
 		}
@@ -144,8 +150,8 @@ public abstract class AbstractClientRemote
 			RemoteResponse rpcResponse = remoteFuture.getResult(rpcRequest.getCallTimeout());
 			if (null == rpcResponse) {
 				clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
-				throw new RemoteTimeoutException(
-						"execute rpcRequest[" + rpcRequest.toString() + "] timeout[" + rpcRequest.getCallTimeout() + "]");
+				throw new RemoteTimeoutException("execute rpcRequest[" + rpcRequest.toString() + "] timeout["
+						+ rpcRequest.getCallTimeout() + "]");
 			} else if (rpcResponse.getStatus() == RemoteResponseState.SEND_FAILED) {
 				throw new RemoteSendFailedException(rpcResponse.getMsg());
 			} else if (rpcResponse.getStatus() == RemoteResponseState.UNFOUND_SERVICE) {
@@ -169,6 +175,11 @@ public abstract class AbstractClientRemote
 		ClientRemoteConnection connection = getConnection(id);
 		if (null == connection) {
 			connection = newRpcConnection(callHost, callPort);
+			connection.addListener(RemoteConnection.Event.ILLEGAL, evntConnection -> {
+				log.error("clientHandler messageReceived type not support from:" + evntConnection.toString());
+				evntConnection.close();
+				removeConnection(evntConnection.getId());
+			});
 			addConnection(connection);
 		}
 		if (null != connection) {
@@ -201,7 +212,7 @@ public abstract class AbstractClientRemote
 		return classSb.toString();
 	}
 
-	//TODO 需要设置 remoteRequest 超时时间
+	// TODO 需要设置 remoteRequest 超时时间
 	@Override
 	public String generateProtocolProxyClassCode(Class<?> protocolClass, String packageName, String className,
 			String version) {
