@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import com.six.dove.remote.AbstractRemoteConnection;
 import com.six.dove.remote.protocol.RemoteRequest;
+import com.six.dove.remote.protocol.RemoteResponse;
+import com.six.dove.remote.protocol.RemoteResponseState;
 
 /**
  * @author 作者
@@ -30,6 +32,28 @@ public abstract class AbstractClientRemoteConnection extends AbstractRemoteConne
 	}
 
 	@Override
+	protected final RemoteFuture doSend(RemoteRequest request) {
+		RemoteFuture remoteFuture = new RemoteFuture(request);
+		remoteFuture.setSendTime(System.currentTimeMillis());
+		putRemoteFuture(request.getId(), remoteFuture);
+		write(request,isSuccess->{
+			if (isSuccess) {
+				log.debug("send rpcRequest successed");
+			} else {
+				removeRemoteFuture(request.getId());
+				RemoteResponse failedRemoteResponse=new RemoteResponse(RemoteResponseState.SEND_FAILED);
+				failedRemoteResponse.setMsg("send rpcRequest["+request+"] to ServerRemote["+toString()+"] failed");
+				remoteFuture.onComplete(failedRemoteResponse);
+				close();
+				log.debug("send rpcRequest failed");
+			}
+		});
+		return remoteFuture;
+	}
+
+	protected abstract void write(RemoteRequest request, SendListener sendListener);
+
+	@Override
 	public void putRemoteFuture(String rpcRequestId, RemoteFuture wrapperFuture) {
 		requestMap.put(rpcRequestId, wrapperFuture);
 	}
@@ -41,5 +65,11 @@ public abstract class AbstractClientRemoteConnection extends AbstractRemoteConne
 
 	protected AbstractClientRemote getClientRemote() {
 		return clientRemote;
+	}
+
+	@FunctionalInterface
+	public interface SendListener {
+
+		void operationComplete(boolean isSuccess);
 	}
 }

@@ -11,7 +11,6 @@ import com.six.dove.remote.client.RemoteFuture;
 import com.six.dove.remote.protocol.RemoteMsg;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
-import com.six.dove.remote.protocol.RemoteResponseState;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -73,7 +72,7 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 				RemoteResponse rpcResponse = (RemoteResponse) msg;
 				RemoteFuture remoteFuture = removeRemoteFuture(rpcResponse.getId());
 				if (null != remoteFuture) {
-					remoteFuture.onComplete(rpcResponse, System.currentTimeMillis());
+					remoteFuture.onComplete(rpcResponse);
 					log.debug("client received rpcResponse from rpcRequest[" + remoteFuture.getRPCRequest().toString()
 							+ "]");
 				}
@@ -160,30 +159,17 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 	}
 
 	@Override
-	protected RemoteFuture doSend(RemoteRequest rpcRequest) {
-		RemoteFuture remoteFuture = new RemoteFuture(rpcRequest);
-		remoteFuture.setSendTime(System.currentTimeMillis());
-		putRemoteFuture(rpcRequest.getId(), remoteFuture);
+	protected void write(RemoteRequest rpcRequest, SendListener sendListener) {
 		ChannelFuture channelFuture = nettyHandler.writeAndFlush(rpcRequest);
 		boolean result = channelFuture.awaitUninterruptibly(rpcRequest.getCallTimeout());
 		if (result) {
 			channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
 				@Override
 				public void operationComplete(Future<? super Void> future) throws Exception {
-					if (future.isSuccess()) {
-						log.debug("send rpcRequest successed");
-					} else {
-						removeRemoteFuture(rpcRequest.getId());
-						RemoteResponse failedRemoteResponse=new RemoteResponse(RemoteResponseState.SEND_FAILED);
-						failedRemoteResponse.setMsg("send rpcRequest["+rpcRequest+"] to ServerRemote["+toString()+"] failed");
-						remoteFuture.onComplete(failedRemoteResponse, System.currentTimeMillis());
-						close();
-						log.debug("send rpcRequest failed");
-					}
+					sendListener.operationComplete(future.isSuccess());
 				}
 			});
 		}
-		return remoteFuture;
 	}
 
 	@Override

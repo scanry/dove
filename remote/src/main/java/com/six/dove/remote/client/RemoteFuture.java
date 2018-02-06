@@ -47,9 +47,9 @@ public class RemoteFuture {
 		return rpcRequest;
 	}
 
-	public void onComplete(RemoteResponse response, long receiveTime) {
+	public void onComplete(RemoteResponse response) {
+		this.receiveTime = System.currentTimeMillis();
 		this.rpcResponse = response;
-		this.receiveTime = receiveTime;
 		cdl.countDown();
 		if (null != rpcRequest.getAsyCallback() && isExecuteAsyCallback.compareAndSet(false, true)) {
 			rpcRequest.getAsyCallback().execute(response);
