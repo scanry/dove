@@ -8,6 +8,9 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -54,10 +57,13 @@ public abstract class AbstractClientRemote
 	}
 	private static AtomicInteger requestIndex = new AtomicInteger(0);
 	private Map<String, Object> serviceWeakHashMap;
+	private ScheduledExecutorService scheduledExecutorService;
+	private final static int default_listen_request_max=1000;
 
 	public AbstractClientRemote(String name, Compiler compiler, RemoteSerialize remoteSerialize) {
 		super(name, compiler, remoteSerialize);
 		this.serviceWeakHashMap = Collections.synchronizedMap(new java.util.WeakHashMap<>());
+		this.scheduledExecutorService=Executors.newScheduledThreadPool(default_listen_request_max);
 	}
 
 	/**
@@ -140,16 +146,17 @@ public abstract class AbstractClientRemote
 				throw remoteException;
 			}
 		}
+		final ClientRemoteConnection finalFindHealthyRpcConnection = clientToServerConnection;
 		try {
-			remoteFuture = clientToServerConnection.send(rpcRequest);
+			remoteFuture = finalFindHealthyRpcConnection.send(rpcRequest);
 		} catch (Exception e) {
-			clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
+			finalFindHealthyRpcConnection.removeRemoteFuture(rpcRequest.getId());
 			throw new RemoteSendFailedException(e);
 		}
 		if (!rpcRequest.isAsy()) {
 			RemoteResponse rpcResponse = remoteFuture.getResult(rpcRequest.getCallTimeout());
 			if (null == rpcResponse) {
-				clientToServerConnection.removeRemoteFuture(rpcRequest.getId());
+				finalFindHealthyRpcConnection.removeRemoteFuture(rpcRequest.getId());
 				throw new RemoteTimeoutException("execute rpcRequest[" + rpcRequest.toString() + "] timeout["
 						+ rpcRequest.getCallTimeout() + "]");
 			} else if (rpcResponse.getStatus() == RemoteResponseState.SEND_FAILED) {
@@ -164,6 +171,10 @@ public abstract class AbstractClientRemote
 				return rpcResponse;
 			}
 		} else {
+			String requestId=rpcRequest.getId();
+			scheduledExecutorService.schedule(()->{
+				finalFindHealthyRpcConnection.removeRemoteFuture(requestId);
+			},rpcRequest.getCallTimeout(), TimeUnit.MILLISECONDS);
 			return null;
 		}
 	}

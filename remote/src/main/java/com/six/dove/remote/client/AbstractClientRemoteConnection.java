@@ -1,6 +1,6 @@
 package com.six.dove.remote.client;
 
-import java.util.Map;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public abstract class AbstractClientRemoteConnection extends AbstractRemoteConne
 	final static Logger log = LoggerFactory.getLogger(AbstractClientRemoteConnection.class);
 
 	private AbstractClientRemote clientRemote;
-	private Map<String, RemoteFuture> requestMap;
+	private ConcurrentHashMap<String, RemoteFuture> requestMap;
 
 	protected AbstractClientRemoteConnection(AbstractClientRemote clientRemote, String host, int port) {
 		super(host, port);
