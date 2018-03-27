@@ -5,14 +5,13 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.six.dove.remote.connection.RemoteConnection;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
 import com.six.dove.remote.server.AbstractServerRemote;
-import com.six.dove.remote.server.ServerRemoteConnection;
 import com.six.dove.remote.server.exception.RemoteSystenException;
 import com.six.dove.remote.server.exception.RemoteSystenExceptions;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -33,9 +32,20 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RemoteReques
 	}
 
 	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		ctx.fireChannelActive();
+		//TODO 这里可以做接入连接限制
+	}
+
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		//TODO这里做断开连接移除
+	}
+
+	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, RemoteRequest rpcRequest) throws Exception {
 		final String id = getId(ctx);
-		ServerRemoteConnection serverRpcConnection = serverRemote.getConnection(id);
+		RemoteConnection<RemoteResponse, RemoteRequest> serverRpcConnection = serverRemote.getConnection(id);
 		if (null == serverRpcConnection) {
 			String[] addressAndPorts = id.split(":");
 			serverRpcConnection = new NettyServerRpcConnection(ctx.channel(), addressAndPorts[0],
@@ -54,7 +64,6 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RemoteReques
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		Channel ch = ctx.channel();
 		String address = ctx.channel().remoteAddress().toString();
 		if (cause instanceof RemoteSystenException) {
 			RemoteSystenException signalErr = (RemoteSystenException) cause;
@@ -76,8 +85,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RemoteReques
 		} else {
 			log.warn("unknow err and close channel[" + address + "]", cause);
 		}
-		ch.close();
-		serverRemote.removeConnection(getId(ctx));
+		serverRemote.closeConnection(serverRemote.getConnection(getId(ctx)));
 	}
 
 }
