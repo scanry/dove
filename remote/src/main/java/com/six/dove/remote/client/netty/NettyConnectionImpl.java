@@ -6,13 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.six.dove.remote.client.AbstractClientRemote;
-import com.six.dove.remote.client.AbstractClientRemoteConnection;
-import com.six.dove.remote.client.RemoteFuture;
-import com.six.dove.remote.protocol.RemoteMsg;
+import com.six.dove.remote.connection.AbstractRemoteConnection;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteResponse;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -27,17 +26,18 @@ import io.netty.util.concurrent.GenericFutureListener;
  * @version:
  * @describe
  */
-public class NettyConnectionImpl extends AbstractClientRemoteConnection implements ChannelInboundHandler {
+public class NettyConnectionImpl extends AbstractRemoteConnection<RemoteRequest, RemoteResponse>
+		implements ChannelInboundHandler {
 
 	final static Logger log = LoggerFactory.getLogger(NettyConnectionImpl.class);
 	private NettyHandler nettyHandler;
 
 	protected NettyConnectionImpl(AbstractClientRemote clientRemote, String host, int port) {
-		super(clientRemote, host, port);
+		super(host, port);
 		this.nettyHandler = new NettyHandler();
 	}
 
-	public class NettyHandler extends SimpleChannelInboundHandler<RemoteMsg> {
+	public class NettyHandler extends SimpleChannelInboundHandler<RemoteResponse> {
 
 		private volatile ChannelHandlerContext ctx;
 		private volatile Channel channel;
@@ -56,7 +56,7 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 			this.channel = ctx.channel();
 		}
 
-		protected ChannelFuture writeAndFlush(RemoteMsg t) {
+		protected ChannelFuture writeAndFlush(RemoteRequest t) {
 			return channel.writeAndFlush(t);
 		}
 
@@ -67,18 +67,8 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 		}
 
 		@Override
-		protected void channelRead0(ChannelHandlerContext ctx, RemoteMsg msg) throws Exception {
-			if (msg instanceof RemoteResponse) {
-				RemoteResponse rpcResponse = (RemoteResponse) msg;
-				RemoteFuture remoteFuture = removeRemoteFuture(rpcResponse.getId());
-				if (null != remoteFuture) {
-					remoteFuture.onComplete(rpcResponse);
-					log.debug("client received rpcResponse from rpcRequest[" + remoteFuture.getRPCRequest().toString()
-							+ "]");
-				}
-			} else {
-				log.error("ClientHandler messageReceived type not support: class=" + msg.getClass());
-			}
+		protected void channelRead0(ChannelHandlerContext ctx, RemoteResponse rpcResponse) throws Exception {
+			getReceiveListener().receive(rpcResponse);
 		}
 
 		@Override
@@ -89,6 +79,20 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 				log.warn("connection to remote[" + address + "] exception and the connection was closed");
 			} else {
 				ctx.fireExceptionCaught(cause);
+			}
+		}
+
+		/**
+		 * 高低水位控制
+		 */
+		@Override
+		public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+			Channel channel=ctx.channel();
+			ChannelConfig conf=ctx.channel().config();
+			if(channel.isWritable()) {
+				conf.setAutoRead(true);
+			}else {
+				conf.setAutoRead(false);
 			}
 		}
 	}
@@ -159,17 +163,14 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 	}
 
 	@Override
-	protected void write(RemoteRequest rpcRequest, SendListener sendListener) {
-		ChannelFuture channelFuture = nettyHandler.writeAndFlush(rpcRequest);
-		boolean result = channelFuture.awaitUninterruptibly(rpcRequest.getCallTimeout());
-		if (result) {
-			channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
-				@Override
-				public void operationComplete(Future<? super Void> future) throws Exception {
-					sendListener.operationComplete(future.isSuccess());
-				}
-			});
-		}
+	protected void doSend(RemoteRequest remoteRequest, SendListener sendListener) {
+		ChannelFuture channelFuture = nettyHandler.writeAndFlush(remoteRequest);
+		channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
+			@Override
+			public void operationComplete(Future<? super Void> future) throws Exception {
+				sendListener.operationComplete(future.isSuccess(), null);
+			}
+		});
 	}
 
 	@Override
@@ -177,7 +178,6 @@ public class NettyConnectionImpl extends AbstractClientRemoteConnection implemen
 		if (null != nettyHandler.ctx) {
 			nettyHandler.ctx.close();
 		}
-		getClientRemote().removeConnection(getId());
 	}
 
 }
