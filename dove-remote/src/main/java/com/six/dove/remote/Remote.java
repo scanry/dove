@@ -2,7 +2,7 @@ package com.six.dove.remote;
 
 import com.six.dove.common.Service;
 import com.six.dove.remote.compiler.Compiler;
-import com.six.dove.transport.codec.TransportCodec;
+import com.six.dove.transport.TransportCodec;
 
 /**
  * @author 作者

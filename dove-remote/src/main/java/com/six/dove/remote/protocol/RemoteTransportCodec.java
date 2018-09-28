@@ -2,13 +2,11 @@ package com.six.dove.remote.protocol;
 
 import java.nio.ByteBuffer;
 
-import com.six.dove.common.utils.JavaSerializeUtils;
-import com.six.dove.transport.codec.TransportCodec;
+import com.six.dove.transport.TransportCodec;
 import com.six.dove.transport.exception.CodecTransportException;
-import com.six.dove.transport.protocol.Request;
-import com.six.dove.transport.protocol.Response;
-import com.six.dove.transport.protocol.TransportMessage;
-import com.six.dove.transport.protocol.TransportMessageProtocol;
+import com.six.dove.transport.Response;
+import com.six.dove.transport.Message;
+import com.six.dove.transport.MessageProtocol;
 
 /**
  * @author:MG01867
@@ -33,19 +31,19 @@ public class RemoteTransportCodec implements TransportCodec {
 	}
 
 	@Override
-	public TransportMessage decoder(ByteBuffer byteBuffer) {
+	public Message decoder(ByteBuffer byteBuffer) {
 		int type = byteBuffer.get();
 		int bodyLength = byteBuffer.getInt();
-		if (TransportMessageProtocol.REQUEST == type) {
+		if (MessageProtocol.REQUEST == type) {
 			byte[] body = new byte[bodyLength];
 			byteBuffer.get(body);
 			RemoteRequest remoteRequest = remoteSerialize.unSerialize(body, RemoteRequest.class);
 			return remoteRequest;
-		} else if (TransportMessageProtocol.RESPONSE == type) {
+		} else if (MessageProtocol.RESPONSE == type) {
 			byte[] body = new byte[bodyLength];
 			byteBuffer.get(body);
 			return new Response();
-		} else if (TransportMessageProtocol.HEARTBEAT == type) {
+		} else if (MessageProtocol.HEARTBEAT == type) {
 			return null;
 		} else {
 			throw new CodecTransportException();
@@ -53,10 +51,10 @@ public class RemoteTransportCodec implements TransportCodec {
 	}
 
 	@Override
-	public byte[] encode(TransportMessage transportMessage) {
+	public byte[] encode(Message transportMessage) {
 		byte[] body = remoteSerialize.serialize(transportMessage);
 		int bodyLength = body.length;
-		ByteBuffer buffer = ByteBuffer.allocate(TransportMessageProtocol.HEAD_LENGTH + bodyLength);
+		ByteBuffer buffer = ByteBuffer.allocate(MessageProtocol.HEAD_LENGTH + bodyLength);
 		buffer.put(transportMessage.getType());
 		if (bodyLength > 0) {
 			buffer.putInt(bodyLength);

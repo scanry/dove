@@ -2,7 +2,7 @@ package com.six.dove.remote.protocol;
 
 import java.io.Serializable;
 
-import com.six.dove.transport.protocol.Response;
+import com.six.dove.transport.Response;
 
 /**
  * @author six
