@@ -1,21 +1,19 @@
 package com.six.dove.transport.netty.client;
 
-import org.junit.Test;
-
-import com.six.dove.transport.Connection;
-import com.six.dove.transport.TransportCodec;
+import com.six.dove.transport.connection.Connection;
+import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.netty.NettyConnection;
-import com.six.dove.transport.protocol.JavaTransportProtocol;
-import com.six.dove.transport.Request;
-import com.six.dove.transport.Response;
-import com.six.dove.transport.Message;
-import com.six.dove.transport.ReceiveMessageHandler;
+import com.six.dove.transport.message.Request;
+import com.six.dove.transport.message.Response;
+import com.six.dove.transport.message.Message;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 
 /**
- * @author:MG01867
- * @date:2018年3月30日
- * @E-mail:359852326@qq.com
+ * @author: Administrator
+ * @date: 2018-9-28
+ * @time: 22:32:58
+ * @email: 359852326@qq.com
  * @version:
  * @describe //TODO
  */

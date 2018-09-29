@@ -1,11 +1,11 @@
 package com.six.transport.socket.client;
 
-import com.six.dove.transport.TransportCodec;
+import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.exception.BigMessageTransportException;
 import com.six.dove.transport.exception.CodecTransportException;
-import com.six.dove.transport.Response;
-import com.six.dove.transport.MessageProtocol;
-import com.six.dove.transport.ReceiveMessageHandler;
+import com.six.dove.transport.message.Response;
+import com.six.dove.transport.message.MessageProtocol;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 import java.io.DataInputStream;
 import java.io.IOException;

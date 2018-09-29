@@ -2,9 +2,8 @@ package com.six.dove.transport.netty;
 
 import java.util.Objects;
 
-import com.six.dove.transport.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
+import com.six.dove.transport.message.Message;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
@@ -12,17 +11,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- * @author 作者
- * @E-mail: 359852326@qq.com
- * @date 创建时间：2017年3月21日 上午10:34:59
- *
+ * @author: Administrator
+ * @date: 2018-9-28
+ * @time: 22:32:58
+ * @email: 359852326@qq.com
+ * @version:
+ * @describe netty handler适配器
  */
-public class NettyReceiveMessageAdapter<M extends Message>
-		extends SimpleChannelInboundHandler<M> {
+public class NettyReceiveMessageAdapter<M extends Message> extends SimpleChannelInboundHandler<M> {
 
-	final static Logger log = LoggerFactory.getLogger(NettyReceiveMessageAdapter.class);
-
-	private Transporter transport;
 	private ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler;
 
 	public NettyReceiveMessageAdapter(ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
@@ -30,60 +27,33 @@ public class NettyReceiveMessageAdapter<M extends Message>
 		this.receiveMessageHandler = receiveMessageHandler;
 	}
 
-	protected String getNettyConnectionId(ChannelHandlerContext ctx) {
-		Channel channel = ctx.channel();
-		String remoteAddress = channel.remoteAddress().toString();
-		String[] remoteAddressArray = remoteAddress.split(":");
-		return Connection.newId(remoteAddressArray[0], Integer.valueOf(remoteAddressArray[0]));
-	}
-
-	private static NettyConnection channelToNettyConnection(ChannelHandlerContext ctx) {
-		Channel channel = ctx.channel();
-		String remoteAddress = channel.remoteAddress().toString();
-		String[] remoteAddressArray = remoteAddress.split(":");
-		NetAddress netAddress=new NetAddress(remoteAddressArray[0],
-				Integer.valueOf(remoteAddressArray[0]))
-		NettyConnection nettyConnection = new NettyConnection(channel,netAddress);
-		return nettyConnection;
-	}
 
 	@Override
-	public void channelActive(ChannelHandlerContext ctx){
+	public void channelActive(ChannelHandlerContext ctx) {
 		ctx.fireChannelActive();
 		// 这里可以做接入连接限制
-		String connectionId = null;
-		NettyConnection nettyConnection = transport.getConnection(connectionId);
-		if (null == nettyConnection) {
-			nettyConnection = channelToNettyConnection(ctx);
-			transport.addConnection(nettyConnection);
-		}
+		NettyConnection nettyConnection = NettyConnectionUtils.channelToNettyConnection(ctx.channel());
 		receiveMessageHandler.connActive(nettyConnection);
 	}
 
 	@Override
-	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		NettyConnection nettyConnection = transport.getConnection(getNettyConnectionId(ctx));
-		if (null != nettyConnection) {
-			receiveMessageHandler.connInactive(nettyConnection);
-		}
+	public void channelInactive(ChannelHandlerContext ctx) {
+		NettyConnection nettyConnection = NettyConnectionUtils.channelToNettyConnection(ctx.channel());
+		receiveMessageHandler.connInactive(nettyConnection);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, com.six.dove.transport.Message message) throws Exception {
-		if (null != message) {
-			NettyConnection nettyConnection = transport.getConnection(getNettyConnectionId(ctx));
-			if (null != nettyConnection) {
-				receiveMessageHandler.receive(nettyConnection, (Message) message);
-			}
-		}
+	protected void channelRead0(ChannelHandlerContext ctx, M message) {
+		NettyConnection nettyConnection = NettyConnectionUtils.channelToNettyConnection(ctx.channel());
+		receiveMessageHandler.receive(nettyConnection, message);
 	}
 
 	/**
 	 * 高低水位控制
 	 */
 	@Override
-	public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+	public void channelWritabilityChanged(ChannelHandlerContext ctx) {
 		Channel channel = ctx.channel();
 		ChannelConfig conf = ctx.channel().config();
 		if (channel.isWritable()) {
@@ -94,7 +64,7 @@ public class NettyReceiveMessageAdapter<M extends Message>
 	}
 
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		// receiveMessageHandler.exceptionCaught(ctx.channel(), cause);
 	}
 }

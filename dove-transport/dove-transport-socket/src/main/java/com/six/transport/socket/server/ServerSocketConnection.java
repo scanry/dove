@@ -1,9 +1,9 @@
 package com.six.transport.socket.server;
 
-import com.six.dove.transport.AbstractConnection;
-import com.six.dove.transport.Connection;
-import com.six.dove.transport.TransportCodec;
-import com.six.dove.transport.Message;
+import com.six.dove.transport.connection.AbstractConnection;
+import com.six.dove.transport.connection.Connection;
+import com.six.dove.transport.codec.TransportCodec;
+import com.six.dove.transport.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

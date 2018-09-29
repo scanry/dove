@@ -1,6 +1,6 @@
 package com.six.dove.transport.client;
 
-import com.six.dove.transport.Connection;
+import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.NetAddress;
 import com.six.dove.transport.Transporter;
 

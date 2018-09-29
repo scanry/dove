@@ -1,7 +1,7 @@
 package com.six.dove.remote.protocol;
 
 
-import com.six.dove.transport.Request;
+import com.six.dove.transport.message.Request;
 
 /**
 *@author:MG01867

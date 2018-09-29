@@ -8,13 +8,13 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.six.dove.transport.Connection;
-import com.six.dove.transport.Connection.SendFutrue;
+import com.six.dove.transport.connection.Connection;
+import com.six.dove.transport.connection.Connection.SendFutrue;
 import com.six.dove.transport.client.AbstractClientTransport;
-import com.six.dove.transport.TransportCodec;
+import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.protocol.JavaTransportProtocol;
-import com.six.dove.transport.Response;
-import com.six.dove.transport.ReceiveMessageHandler;
+import com.six.dove.transport.message.Response;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 /**
  * @author:MG01867

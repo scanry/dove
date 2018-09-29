@@ -12,9 +12,11 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
 /**
- * @author 作者
- * @E-mail: 359852326@qq.com
- * @date 创建时间：2017年3月22日 下午1:10:36
+ * @author: MG01867
+ * @date: 2018/9/29
+ * @email: 359852326@qq.com
+ * @version:
+ * @describe: netty连接 空闲心跳
  */
 @ChannelHandler.Sharable
 public class NettyClientAcceptorIdleStateTrigger extends ChannelInboundHandlerAdapter {

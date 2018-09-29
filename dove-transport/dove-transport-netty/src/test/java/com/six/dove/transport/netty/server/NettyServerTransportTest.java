@@ -2,11 +2,11 @@ package com.six.dove.transport.netty.server;
 
 import org.junit.Test;
 
-import com.six.dove.transport.TransportCodec;
+import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.netty.NettyConnection;
 import com.six.dove.transport.protocol.JavaTransportProtocol;
-import com.six.dove.transport.Request;
-import com.six.dove.transport.ReceiveMessageHandler;
+import com.six.dove.transport.message.Request;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 /**
  * @author:MG01867

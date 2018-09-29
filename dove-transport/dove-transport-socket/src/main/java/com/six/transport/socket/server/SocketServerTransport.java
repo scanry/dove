@@ -1,10 +1,10 @@
 package com.six.transport.socket.server;
 
-import com.six.dove.transport.TransportCodec;
+import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.exception.TransportException;
-import com.six.dove.transport.Request;
+import com.six.dove.transport.message.Request;
 import com.six.dove.transport.server.AbstractServerTransport;
-import com.six.dove.transport.ReceiveMessageHandler;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

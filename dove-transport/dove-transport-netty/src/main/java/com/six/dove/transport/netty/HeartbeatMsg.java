@@ -1,15 +1,16 @@
 package com.six.dove.transport.netty;
 
-import com.six.dove.transport.MessageProtocol;
+import com.six.dove.transport.message.MessageProtocol;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- * @author 作者
- * @E-mail: 359852326@qq.com
- * @date 创建时间：2017年3月22日 上午11:03:20 
- * <p>心跳数据包 只包含 数据类型 占用一个字节</p>
+ * @author: Administrator
+ * @date: 2018-9-28
+ * @time: 22:32:58
+ * @email: 359852326@qq.com
+ * @version: 心跳数据包 只包含 数据类型 占用一个字节
  */
 public class HeartbeatMsg {
 

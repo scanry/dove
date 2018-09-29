@@ -29,7 +29,7 @@ public interface RemoteSerialize {
 				obstr.writeObject(object);
 				dts = baos.toByteArray();
 			} catch (IOException e) {
-				throw new RuntimeException("default java's serializer err:" + object.getClass(), e);
+				throw new RuntimeException("default java's codec err:" + object.getClass(), e);
 			}
 		}
 		return dts;

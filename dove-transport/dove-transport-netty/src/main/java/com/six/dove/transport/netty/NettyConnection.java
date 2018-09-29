@@ -2,16 +2,17 @@ package com.six.dove.transport.netty;
 
 import java.util.Objects;
 
-import com.six.dove.transport.AbstractConnection;
-import com.six.dove.transport.Message;
+import com.six.dove.transport.connection.AbstractConnection;
+import com.six.dove.transport.message.Message;
 
 import com.six.dove.transport.NetAddress;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 
 /**
- * @author:MG01867
- * @date: 2018年5月9日
+ * @author: Administrator
+ * @date: 2018-9-28
+ * @time: 22:32:58
  * @email: 359852326@qq.com
  * @version:
  * @describe netty 链接
@@ -39,8 +40,6 @@ public class NettyConnection extends AbstractConnection {
 
     @Override
     public void close() {
-        if (null != channel) {
-            channel.close();
-        }
+        channel.close();
     }
 }

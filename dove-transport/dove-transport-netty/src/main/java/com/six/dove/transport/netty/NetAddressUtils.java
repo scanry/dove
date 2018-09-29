@@ -20,5 +20,4 @@ public class NetAddressUtils {
         String[] addressArray = remote.toString().split(":");
         return new NetAddress(addressArray[0], Integer.valueOf(addressArray[1]));
     }
-
 }

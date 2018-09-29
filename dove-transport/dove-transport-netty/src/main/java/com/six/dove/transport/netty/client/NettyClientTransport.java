@@ -5,10 +5,15 @@ import java.util.concurrent.TimeUnit;
 
 import com.six.dove.transport.*;
 import com.six.dove.transport.client.AbstractClientTransport;
+import com.six.dove.transport.client.ClientTransport;
+import com.six.dove.transport.codec.TransportCodec;
+import com.six.dove.transport.connection.ConnectionPool;
+import com.six.dove.transport.handler.ReceiveMessageHandler;
+import com.six.dove.transport.message.Response;
 import com.six.dove.transport.netty.NettyConnection;
 import com.six.dove.transport.netty.NettyReceiveMessageAdapter;
-import com.six.dove.transport.netty.coder.NettyRpcDecoderAdapter;
-import com.six.dove.transport.netty.coder.NettyRpcEncoderAdapter;
+import com.six.dove.transport.netty.codec.NettyRpcDecoderAdapter;
+import com.six.dove.transport.netty.codec.NettyRpcEncoderAdapter;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -31,68 +36,77 @@ import io.netty.handler.timeout.IdleStateHandler;
  */
 public class NettyClientTransport<M extends Response> extends AbstractClientTransport<NettyConnection, M> {
 
-    private EventLoopGroup workerGroup;
+	private EventLoopGroup workerGroup;
 
-    public NettyClientTransport(int workerGroupThreads, int connectTimeout, int writerIdleTime, ConnectionPool<NettyConnection> connectionPool, TransportCodec transportProtocol,
-                                ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
-        super(connectionPool, transportProtocol, receiveMessageHandler);
-        workerGroup = new NioEventLoopGroup(workerGroupThreads < 0 ? 0 : workerGroupThreads);
-    }
+	public NettyClientTransport(int workerGroupThreads, ConnectionPool<NettyConnection> connectionPool,
+			TransportCodec transportProtocol, ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
+		this(workerGroupThreads, ClientTransport.DEFAULT_CONNECT_TIMEOUT, ClientTransport.DEFAULT_SEND_TIMEOUT,
+				ClientTransport.DEFAULT_IDLE_TIME, connectionPool, transportProtocol, receiveMessageHandler);
+	}
 
-    @Override
-    protected NettyConnection newConnection(String host, int port) {
-        CountDownLatch cdl = new CountDownLatch(1);
-        ClientNettyReceiveMessageAdapter clientNettyReceiveMessageAdapter = new ClientNettyReceiveMessageAdapter(cdl,
-                getReceiveMessageHandler());
-        Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(workerGroup);
-        bootstrap.channel(NioSocketChannel.class);
-        bootstrap.option(ChannelOption.SO_KEEPALIVE, true).option(ChannelOption.TCP_NODELAY, true)
-                // .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            public void initChannel(SocketChannel ch){
-                ch.pipeline().addLast(new IdleStateHandler(0, (int) getWriterIdleTime(), 0));
-                ch.pipeline().addLast(new NettyClientAcceptorIdleStateTrigger());
-                ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportProtocol()));
-                ch.pipeline().addLast(new NettyRpcDecoderAdapter(getTransportProtocol()));
-                ch.pipeline().addLast(clientNettyReceiveMessageAdapter);
-            }
-        });
-        bootstrap.connect(host, port);
-        try {
-            cdl.await(getConnectTimeout(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            // ignore
-        }
-        return new NettyConnection(clientNettyReceiveMessageAdapter.channel, new NetAddress(host, port));
-    }
+	public NettyClientTransport(int workerGroupThreads, long connectTimeout, long sendTimeout, long writerIdleTime,
+			ConnectionPool<NettyConnection> connectionPool, TransportCodec transportProtocol,
+			ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
+		super(connectTimeout, sendTimeout, writerIdleTime, connectionPool, transportProtocol, receiveMessageHandler);
+		if (workerGroupThreads <= 0) {
+			throw new IllegalArgumentException(
+					String.format("The workerGroupThreads[%s] must greater than 0", workerGroupThreads));
+		}
+		workerGroup = new NioEventLoopGroup(workerGroupThreads);
+	}
 
-    class ClientNettyReceiveMessageAdapter extends NettyReceiveMessageAdapter<M> {
+	@Override
+	protected NettyConnection newConnection(String host, int port) {
+		CountDownLatch cdl = new CountDownLatch(1);
+		ClientNettyReceiveMessageAdapter clientNettyReceiveMessageAdapter = new ClientNettyReceiveMessageAdapter(cdl,
+				getReceiveMessageHandler());
+		Bootstrap bootstrap = new Bootstrap();
+		bootstrap.group(workerGroup);
+		bootstrap.channel(NioSocketChannel.class);
+		bootstrap.option(ChannelOption.SO_KEEPALIVE, true).option(ChannelOption.TCP_NODELAY, true)
+				.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
+			@Override
+			public void initChannel(SocketChannel ch) {
+				ch.pipeline().addLast(new IdleStateHandler(0, (int) getWriterIdleTime(), 0));
+				ch.pipeline().addLast(new NettyClientAcceptorIdleStateTrigger());
+				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportProtocol()));
+				ch.pipeline().addLast(new NettyRpcDecoderAdapter(getTransportProtocol()));
+				ch.pipeline().addLast(clientNettyReceiveMessageAdapter);
+			}
+		});
+		bootstrap.connect(host, port);
+		try {
+			cdl.await(getConnectTimeout(), TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			// ignore
+		}
+		return new NettyConnection(clientNettyReceiveMessageAdapter.channel, new NetAddress(host, port));
+	}
 
-        private CountDownLatch cdl;
-        private Channel channel;
+	class ClientNettyReceiveMessageAdapter extends NettyReceiveMessageAdapter<M> {
 
-        public ClientNettyReceiveMessageAdapter(CountDownLatch cdl,
-                                                ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
-            super(receiveMessageHandler);
-            this.cdl = cdl;
-        }
+		private CountDownLatch cdl;
+		private Channel channel;
 
-        @Override
-        public void channelActive(ChannelHandlerContext ctx){
-            this.channel = ctx.channel();
-            cdl.countDown();
-        }
+		ClientNettyReceiveMessageAdapter(CountDownLatch cdl,
+				ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
+			super(receiveMessageHandler);
+			this.cdl = cdl;
+		}
 
-    }
+		@Override
+		public void channelActive(ChannelHandlerContext ctx) {
+			super.channelActive(ctx);
+			this.channel=ctx.channel();
+			cdl.countDown();
+		}
 
-    @Override
-    protected void doShutdown() {
-        if (null != workerGroup) {
-            workerGroup.shutdownGracefully();
-        }
-    }
+	}
+
+	@Override
+	protected void doShutdown() {
+        workerGroup.shutdownGracefully();
+	}
 
 }

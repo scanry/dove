@@ -11,7 +11,7 @@ import com.six.dove.remote.protocol.RemoteResponseState;
 import com.six.dove.remote.server.exception.RemoteInvokeException;
 import com.six.dove.remote.server.exception.RemoteRejectException;
 import com.six.dove.transport.client.ClientTransport;
-import com.six.dove.transport.Request;
+import com.six.dove.transport.message.Request;
 
 /**
  * @author:MG01867

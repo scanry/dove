@@ -1,8 +1,12 @@
 package com.six.transport.socket;
 
 import com.six.dove.common.utils.JavaSerializeUtils;
-import com.six.dove.transport.*;
+import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.exception.CodecTransportException;
+import com.six.dove.transport.message.Message;
+import com.six.dove.transport.message.MessageProtocol;
+import com.six.dove.transport.message.Request;
+import com.six.dove.transport.message.Response;
 
 import java.nio.ByteBuffer;
 
@@ -13,7 +17,7 @@ import java.nio.ByteBuffer;
  * @version:
  * @describe //TODO
  */
-public class JavaTransportProtocol implements TransportCodec{
+public class JavaTransportProtocol implements TransportCodec {
 
 	private int maxMessageSize;
 
