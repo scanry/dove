@@ -29,23 +29,22 @@ public class NettyReceiveMessageAdapter<M extends Message> extends SimpleChannel
 
 
 	@Override
-	public void channelActive(ChannelHandlerContext ctx) {
-		ctx.fireChannelActive();
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		super.channelActive(ctx);
 		// 这里可以做接入连接限制
-		NettyConnection nettyConnection = NettyConnectionUtils.channelToNettyConnection(ctx.channel());
-		receiveMessageHandler.connActive(nettyConnection);
+		receiveMessageHandler.connActive(NettyConnection.channelToNettyConnection(ctx.channel()));
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) {
-		NettyConnection nettyConnection = NettyConnectionUtils.channelToNettyConnection(ctx.channel());
+		NettyConnection nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
 		receiveMessageHandler.connInactive(nettyConnection);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, M message) {
-		NettyConnection nettyConnection = NettyConnectionUtils.channelToNettyConnection(ctx.channel());
+		NettyConnection nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
 		receiveMessageHandler.receive(nettyConnection, message);
 	}
 

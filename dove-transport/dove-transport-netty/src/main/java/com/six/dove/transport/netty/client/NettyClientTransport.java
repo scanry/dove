@@ -96,7 +96,7 @@ public class NettyClientTransport<M extends Response> extends AbstractClientTran
 		}
 
 		@Override
-		public void channelActive(ChannelHandlerContext ctx) {
+		public void channelActive(ChannelHandlerContext ctx) throws Exception{
 			super.channelActive(ctx);
 			this.channel=ctx.channel();
 			cdl.countDown();
