@@ -2,8 +2,9 @@ package com.six.dove.transport.netty.client;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.six.dove.transport.netty.NettyConnection;
+import com.six.dove.transport.message.Request;
 import com.six.dove.transport.message.Response;
+import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 /**
@@ -15,27 +16,27 @@ import com.six.dove.transport.handler.ReceiveMessageHandler;
  * @describe //TODO
  */
 public class NettyClientReceiveMessageHandlerTest
-        implements ReceiveMessageHandler<NettyConnection, Response> {
+        implements ReceiveMessageHandler<Response, Request> {
 
     private AtomicInteger count = new AtomicInteger(0);
 
     @Override
-    public void connActive(NettyConnection connection) {
+    public void connActive(Connection<Request> connection) {
         System.out.println("client connection from " + connection.toString());
     }
 
     @Override
-    public void receive(NettyConnection connection, Response message) {
+    public void receive(Connection<Request> connection, Response message) {
         System.out.println("client receive message:" + count.getAndIncrement());
     }
 
     @Override
-    public void connInactive(NettyConnection connection) {
+    public void connInactive(Connection<Request> connection) {
         System.out.println("client connInactive from " + connection.toString());
     }
 
     @Override
-    public void exceptionCaught(NettyConnection connection, Exception exception) {
+    public void exceptionCaught(Connection<Request> connection, Exception exception) {
         System.out.println("clientexceptionCaught from " + connection.toString());
         exception.printStackTrace();
     }

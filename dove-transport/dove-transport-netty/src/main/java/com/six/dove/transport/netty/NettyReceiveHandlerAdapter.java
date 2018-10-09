@@ -5,8 +5,6 @@ import java.util.Objects;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
 import com.six.dove.transport.message.Message;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -18,15 +16,16 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @version:
  * @describe netty handler适配器
  */
-public class NettyReceiveMessageAdapter<M extends Message> extends SimpleChannelInboundHandler<M> {
+public class NettyReceiveHandlerAdapter<SendMsg extends Message, ReceMsg extends Message>
+		extends SimpleChannelInboundHandler<ReceMsg> {
 
-	private ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler;
+	private ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler;
 
-	public NettyReceiveMessageAdapter(ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
+	public NettyReceiveHandlerAdapter(
+			ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler) {
 		Objects.requireNonNull(receiveMessageHandler);
 		this.receiveMessageHandler = receiveMessageHandler;
 	}
-
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -37,29 +36,14 @@ public class NettyReceiveMessageAdapter<M extends Message> extends SimpleChannel
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) {
-		NettyConnection nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
+		NettyConnection<SendMsg> nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
 		receiveMessageHandler.connInactive(nettyConnection);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, M message) {
-		NettyConnection nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
+	protected void channelRead0(ChannelHandlerContext ctx, ReceMsg message) {
+		NettyConnection<SendMsg> nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
 		receiveMessageHandler.receive(nettyConnection, message);
-	}
-
-	/**
-	 * 高低水位控制
-	 */
-	@Override
-	public void channelWritabilityChanged(ChannelHandlerContext ctx) {
-		Channel channel = ctx.channel();
-		ChannelConfig conf = ctx.channel().config();
-		if (channel.isWritable()) {
-			conf.setAutoRead(true);
-		} else {
-			conf.setAutoRead(false);
-		}
 	}
 
 	@Override

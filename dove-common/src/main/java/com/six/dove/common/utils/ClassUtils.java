@@ -46,10 +46,9 @@ public class ClassUtils {
 
 	public static Object newInstance(String name) {
 		try {
-			return forName(name).newInstance();
-		} catch (InstantiationException e) {
-			throw new IllegalStateException(e.getMessage(), e);
-		} catch (IllegalAccessException e) {
+			Class<?> clz=forName(name);
+			return clz.getDeclaredConstructor(new Class[0]).newInstance();
+		} catch (Exception e) {
 			throw new IllegalStateException(e.getMessage(), e);
 		}
 	}

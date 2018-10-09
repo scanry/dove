@@ -10,7 +10,7 @@ import com.six.dove.transport.message.Message;
  * @version:
  * @describe 传输层连接接口
  */
-public interface Connection<M extends Message> extends AutoCloseable {
+public interface Connection<SendMsg extends Message> extends AutoCloseable {
 
     static String generateId(NetAddress netAddress){
         return generateId(netAddress.getHost(), netAddress.getPort());
@@ -57,7 +57,7 @@ public interface Connection<M extends Message> extends AutoCloseable {
      *
      * @param message 发送消息
      */
-    default void send(M message) {
+    default void send(SendMsg message) {
         send(message, sendListener);
     }
 
@@ -67,7 +67,7 @@ public interface Connection<M extends Message> extends AutoCloseable {
      * @param message  发送消息
      * @param listener 发送结果监听
      */
-    void send(M message, SendListener listener);
+    void send(SendMsg message, SendListener listener);
 
     /**
      * 连接关闭

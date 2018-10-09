@@ -2,6 +2,8 @@ package com.six.dove.transport.server;
 
 import com.six.dove.transport.NetAddress;
 import com.six.dove.transport.Transporter;
+import com.six.dove.transport.message.Request;
+import com.six.dove.transport.message.Response;
 
 /**
  * @author: Administrator
@@ -11,7 +13,8 @@ import com.six.dove.transport.Transporter;
  * @version:
  * @describe 服务 传输端
  */
-public interface ServerTransport extends Transporter {
+public interface ServerTransport<SendMsg extends Response, ReceMsg extends Request>
+		extends Transporter<SendMsg, ReceMsg> {
 
-    NetAddress getNetAddress();
+	NetAddress getNetAddress();
 }

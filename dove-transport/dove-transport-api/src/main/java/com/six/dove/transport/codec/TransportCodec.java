@@ -11,9 +11,9 @@ import com.six.dove.transport.message.Message;
  * @version:
  * @describe 消息编解码
  */
-public interface TransportCodec<M extends Message>{
+public interface TransportCodec<SendMsg extends Message,ReceMsg extends Message>{
 
-	M decoder(DByteBuffer byteBuffer);
+	ReceMsg decoder(DByteBuffer byteBuffer);
 
-	byte[] encode(M message);
+	byte[] encode(SendMsg message);
 }

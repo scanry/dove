@@ -6,12 +6,12 @@ import java.util.concurrent.TimeUnit;
 import com.six.dove.transport.*;
 import com.six.dove.transport.client.AbstractClientTransport;
 import com.six.dove.transport.client.ClientTransport;
-import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.connection.ConnectionPool;
+import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
+import com.six.dove.transport.message.Request;
 import com.six.dove.transport.message.Response;
 import com.six.dove.transport.netty.NettyConnection;
-import com.six.dove.transport.netty.NettyReceiveMessageAdapter;
+import com.six.dove.transport.netty.NettyReceiveHandlerAdapter;
 import com.six.dove.transport.netty.codec.NettyRpcDecoderAdapter;
 import com.six.dove.transport.netty.codec.NettyRpcEncoderAdapter;
 
@@ -34,20 +34,18 @@ import io.netty.handler.timeout.IdleStateHandler;
  * @version:
  * @describe netty-客户 传输端基类
  */
-public class NettyClientTransport<M extends Response> extends AbstractClientTransport<NettyConnection, M> {
+public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Response>
+		extends AbstractClientTransport<SendMsg, ReceMsg> {
 
 	private EventLoopGroup workerGroup;
 
-	public NettyClientTransport(int workerGroupThreads, ConnectionPool<NettyConnection> connectionPool,
-			TransportCodec transportProtocol, ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
+	public NettyClientTransport(int workerGroupThreads) {
 		this(workerGroupThreads, ClientTransport.DEFAULT_CONNECT_TIMEOUT, ClientTransport.DEFAULT_SEND_TIMEOUT,
-				ClientTransport.DEFAULT_IDLE_TIME, connectionPool, transportProtocol, receiveMessageHandler);
+				ClientTransport.DEFAULT_IDLE_TIME);
 	}
 
-	public NettyClientTransport(int workerGroupThreads, long connectTimeout, long sendTimeout, long writerIdleTime,
-			ConnectionPool<NettyConnection> connectionPool, TransportCodec transportProtocol,
-			ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
-		super(connectTimeout, sendTimeout, writerIdleTime, connectionPool, transportProtocol, receiveMessageHandler);
+	public NettyClientTransport(int workerGroupThreads, long connectTimeout, long sendTimeout, long writerIdleTime) {
+		super(connectTimeout, sendTimeout, writerIdleTime);
 		if (workerGroupThreads <= 0) {
 			throw new IllegalArgumentException(
 					String.format("The workerGroupThreads[%s] must greater than 0", workerGroupThreads));
@@ -56,8 +54,9 @@ public class NettyClientTransport<M extends Response> extends AbstractClientTran
 	}
 
 	@Override
-	protected NettyConnection newConnection(String host, int port) {
+	protected Connection<SendMsg> newConnection(String host, int port) {
 		CountDownLatch cdl = new CountDownLatch(1);
+		getReceiveMessageHandler();
 		ClientNettyReceiveMessageAdapter clientNettyReceiveMessageAdapter = new ClientNettyReceiveMessageAdapter(cdl,
 				getReceiveMessageHandler());
 		Bootstrap bootstrap = new Bootstrap();
@@ -70,8 +69,8 @@ public class NettyClientTransport<M extends Response> extends AbstractClientTran
 			public void initChannel(SocketChannel ch) {
 				ch.pipeline().addLast(new IdleStateHandler(0, (int) getWriterIdleTime(), 0));
 				ch.pipeline().addLast(new NettyClientAcceptorIdleStateTrigger());
-				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportProtocol()));
-				ch.pipeline().addLast(new NettyRpcDecoderAdapter(getTransportProtocol()));
+				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
+				ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(),getTransportCodec()));
 				ch.pipeline().addLast(clientNettyReceiveMessageAdapter);
 			}
 		});
@@ -81,24 +80,24 @@ public class NettyClientTransport<M extends Response> extends AbstractClientTran
 		} catch (InterruptedException e) {
 			// ignore
 		}
-		return new NettyConnection(clientNettyReceiveMessageAdapter.channel, new NetAddress(host, port));
+		return new NettyConnection<>(clientNettyReceiveMessageAdapter.channel, new NetAddress(host, port));
 	}
 
-	class ClientNettyReceiveMessageAdapter extends NettyReceiveMessageAdapter<M> {
+	class ClientNettyReceiveMessageAdapter extends NettyReceiveHandlerAdapter<SendMsg, ReceMsg> {
 
 		private CountDownLatch cdl;
 		private Channel channel;
 
 		ClientNettyReceiveMessageAdapter(CountDownLatch cdl,
-				ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler) {
+				ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler) {
 			super(receiveMessageHandler);
 			this.cdl = cdl;
 		}
 
 		@Override
-		public void channelActive(ChannelHandlerContext ctx) throws Exception{
+		public void channelActive(ChannelHandlerContext ctx) throws Exception {
 			super.channelActive(ctx);
-			this.channel=ctx.channel();
+			this.channel = ctx.channel();
 			cdl.countDown();
 		}
 
@@ -106,7 +105,7 @@ public class NettyClientTransport<M extends Response> extends AbstractClientTran
 
 	@Override
 	protected void doShutdown() {
-        workerGroup.shutdownGracefully();
+		workerGroup.shutdownGracefully();
 	}
 
 }

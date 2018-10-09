@@ -5,15 +5,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.six.dove.transport.*;
-import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.connection.ConnectionPool;
-import com.six.dove.transport.handler.ReceiveMessageHandler;
 import com.six.dove.transport.message.Request;
+import com.six.dove.transport.message.Response;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.six.dove.transport.netty.NettyConnection;
-import com.six.dove.transport.netty.NettyReceiveMessageAdapter;
+import com.six.dove.transport.netty.NettyReceiveHandlerAdapter;
 import com.six.dove.transport.netty.codec.NettyRpcDecoderAdapter;
 import com.six.dove.transport.netty.codec.NettyRpcEncoderAdapter;
 import com.six.dove.transport.server.AbstractServerTransport;
@@ -40,7 +38,7 @@ import io.netty.handler.timeout.IdleStateHandler;
  * @version:
  * @describe netty-服务 传输端
  */
-public class NettyServerTransport<M extends Request> extends AbstractServerTransport<NettyConnection, M> {
+public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Request> extends AbstractServerTransport<SendMsg,ReceMsg> {
 
     final static Logger log = LoggerFactory.getLogger(NettyServerTransport.class);
 
@@ -65,9 +63,8 @@ public class NettyServerTransport<M extends Request> extends AbstractServerTrans
 
     private int allIdleTimeSeconds;
 
-    public NettyServerTransport(int port, ConnectionPool<NettyConnection> connectionPool, TransportCodec transportProtocol,
-                                ReceiveMessageHandler<NettyConnection, M> receiveMessageHandler, int workerIoThreads, int allIdleTimeSeconds) {
-        super(port, connectionPool, transportProtocol, receiveMessageHandler);
+    public NettyServerTransport(int port,int workerIoThreads, int allIdleTimeSeconds) {
+        super(port);
         this.workerIoThreads = workerIoThreads;
     }
 
@@ -109,9 +106,9 @@ public class NettyServerTransport<M extends Request> extends AbstractServerTrans
                     public void initChannel(SocketChannel ch){
                         ch.pipeline().addLast(new IdleStateHandler(0, 0, allIdleTimeSeconds));
                         ch.pipeline().addLast(new NettyServerAcceptorIdleStateTrigger());
-                        ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportProtocol()));
-                        ch.pipeline().addLast(new NettyRpcDecoderAdapter(getTransportProtocol()));
-                        ch.pipeline().addLast(new NettyReceiveMessageAdapter<>(getReceiveMessageHandler()));
+                        ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
+                        ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(),getTransportCodec()));
+                        ch.pipeline().addLast(new NettyReceiveHandlerAdapter<>(getReceiveMessageHandler()));
                     }
                 }).option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, false).option(ChannelOption.TCP_NODELAY, true)

@@ -1,11 +1,10 @@
 package com.six.dove.transport.server;
 
-import com.six.dove.transport.*;
-import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.connection.Connection;
-import com.six.dove.transport.connection.ConnectionPool;
-import com.six.dove.transport.handler.ReceiveMessageHandler;
+import com.six.dove.transport.AbstractTransport;
+import com.six.dove.transport.NetAddress;
+import com.six.dove.transport.Transporter;
 import com.six.dove.transport.message.Request;
+import com.six.dove.transport.message.Response;
 
 /**
  * @author: Administrator
@@ -15,36 +14,32 @@ import com.six.dove.transport.message.Request;
  * @version:
  * @describe 服务 传输端-基类
  */
-public abstract class AbstractServerTransport<C extends Connection, M extends Request>
-        extends AbstractTransport<C, M> implements ServerTransport {
+public abstract class AbstractServerTransport<SendMsg extends Response, ReceMsg extends Request>
+		extends AbstractTransport<SendMsg, ReceMsg> implements ServerTransport<SendMsg, ReceMsg> {
 
-    private NetAddress netAddress;
+	private NetAddress netAddress;
 
-    public AbstractServerTransport(int port, ConnectionPool<C> connectionPool, TransportCodec transportProtocol,
-                                   ReceiveMessageHandler<C, M> receiveMessageHandler) {
-        this(Transporter.LOCAL_HOST, port, connectionPool, transportProtocol, receiveMessageHandler);
-    }
+	public AbstractServerTransport(int port) {
+		this(Transporter.LOCAL_HOST, port);
+	}
 
-    public AbstractServerTransport(String host, int port, ConnectionPool<C> connectionPool, TransportCodec transportProtocol,
-                                   ReceiveMessageHandler<C, M> receiveMessageHandler) {
-        this(new NetAddress(host, port), connectionPool, transportProtocol, receiveMessageHandler);
-    }
+	public AbstractServerTransport(String host, int port) {
+		this(new NetAddress(host, port));
+	}
 
-    public AbstractServerTransport(NetAddress netAddress, ConnectionPool<C> connectionPool, TransportCodec transportProtocol,
-                                   ReceiveMessageHandler<C, M> receiveMessageHandler) {
-        super(connectionPool, transportProtocol, receiveMessageHandler);
-        this.netAddress = netAddress;
-    }
+	public AbstractServerTransport(NetAddress netAddress) {
+		this.netAddress = netAddress;
+	}
 
-    @Override
-    public final void doStart() {
-        innerDoStart(netAddress);
-    }
+	@Override
+	public final void doStart() {
+		innerDoStart(netAddress);
+	}
 
-    protected abstract void innerDoStart(NetAddress netAddress);
+	protected abstract void innerDoStart(NetAddress netAddress);
 
-    @Override
-    public final NetAddress getNetAddress() {
-        return netAddress;
-    }
+	@Override
+	public final NetAddress getNetAddress() {
+		return netAddress;
+	}
 }

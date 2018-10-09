@@ -1,5 +1,7 @@
 package com.six.dove.transport.connection;
 
+import com.six.dove.transport.message.Message;
+
 /**
  * @author: Administrator
  * @date: 2018-9-28
@@ -8,12 +10,12 @@ package com.six.dove.transport.connection;
  * @version:
  * @describe 连接池
  */
-public interface ConnectionPool<C extends Connection> {
+public interface ConnectionPool{
 
-    C get(String id);
+	<SendMsg extends Message>Connection<SendMsg> get(String id);
 
-    void add(C connection);
+	<SendMsg extends Message>void add(Connection<SendMsg> connection);
 
-    void remove(C connection);
+	<SendMsg extends Message>void remove(Connection<SendMsg> connection);
 }
 

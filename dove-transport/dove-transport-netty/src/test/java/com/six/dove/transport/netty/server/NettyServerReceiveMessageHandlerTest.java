@@ -2,9 +2,9 @@ package com.six.dove.transport.netty.server;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.six.dove.transport.netty.NettyConnection;
 import com.six.dove.transport.message.Request;
 import com.six.dove.transport.message.Response;
+import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 /**
@@ -14,29 +14,29 @@ import com.six.dove.transport.handler.ReceiveMessageHandler;
  * @version:
  * @describe //TODO
  */
-public class NettyServerReceiveMessageHandlerTest<MessageRequest extends Request>
-		implements ReceiveMessageHandler<NettyConnection, MessageRequest> {
+public class NettyServerReceiveMessageHandlerTest
+		implements ReceiveMessageHandler<Request, Response> {
 
 	private AtomicInteger count = new AtomicInteger(0);
 
 	@Override
-	public void connActive(NettyConnection connection) {
+	public void connActive(Connection<Response> connection) {
 		System.out.println("server connection from " + connection.toString());
 	}
 
 	@Override
-	public void receive(NettyConnection connection, MessageRequest message) {
+	public void receive(Connection<Response> connection, Request message) {
 		System.out.println("server receive message:" + count.getAndIncrement());
 		connection.send(new Response());
 	}
 
 	@Override
-	public void connInactive(NettyConnection connection) {
+	public void connInactive(Connection<Response> connection) {
 		System.out.println("server connInactive from " + connection.toString());
 	}
 
 	@Override
-	public void exceptionCaught(NettyConnection connection, Throwable cause) {
+	public void exceptionCaught(Connection<Response> connection, Exception cause) {
 		System.out.println("server exceptionCaught from " + connection.toString());
 		cause.printStackTrace();
 	}

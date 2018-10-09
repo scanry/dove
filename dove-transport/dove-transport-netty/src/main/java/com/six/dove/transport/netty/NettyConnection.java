@@ -20,24 +20,25 @@ import io.netty.util.AttributeKey;
  * @version:
  * @describe netty 链接
  */
-public class NettyConnection extends AbstractConnection {
+public class NettyConnection<SendMsg extends Message> extends AbstractConnection<SendMsg>{
 
-    private static final AttributeKey<NettyConnection> WRAPPER_CONNECTION = AttributeKey.valueOf("dove.connection");
+    private static final AttributeKey<NettyConnection<? extends Message>> WRAPPER_CONNECTION = AttributeKey.valueOf("dove.connection");
     private Channel channel;
 
-    public static NettyConnection channelToNettyConnection(Channel channel) {
-        Attribute<NettyConnection> attr = channel.attr(WRAPPER_CONNECTION);
-        NettyConnection stockChannel = attr.get();
+	@SuppressWarnings("unchecked")
+	public static <SendMsg extends Message>NettyConnection<SendMsg> channelToNettyConnection(Channel channel) {
+        Attribute<NettyConnection<? extends Message>> attr =channel.attr(WRAPPER_CONNECTION);
+        NettyConnection<? extends Message> stockChannel =attr.get();
         if (stockChannel == null) {
             InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
             NetAddress netAddress = new NetAddress(inetSocketAddress.getHostString(), inetSocketAddress.getPort());
-            NettyConnection newNChannel = new NettyConnection(channel, netAddress);
+            NettyConnection<Message> newNChannel = new NettyConnection<>(channel, netAddress);
             stockChannel = attr.setIfAbsent(newNChannel);
             if (stockChannel == null) {
                 stockChannel = newNChannel;
             }
         }
-        return stockChannel;
+        return (NettyConnection<SendMsg>)stockChannel;
     }
 
     public NettyConnection(Channel channel, NetAddress netAddress) {

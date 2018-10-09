@@ -13,7 +13,7 @@ import java.util.Objects;
  * @version:
  * @describe 链接基类
  */
-public abstract class AbstractConnection<M extends Message> implements Connection<M> {
+public abstract class AbstractConnection<SendMsg extends Message> implements Connection<SendMsg> {
 
     private String id;
     private NetAddress netAddress;
@@ -41,7 +41,7 @@ public abstract class AbstractConnection<M extends Message> implements Connectio
     }
 
     @Override
-    public final void send(M message, SendListener sendListener) {
+    public final void send(SendMsg message, SendListener sendListener) {
         this.lastActivityTime = System.currentTimeMillis();
         doSend(message, sendListener);
     }

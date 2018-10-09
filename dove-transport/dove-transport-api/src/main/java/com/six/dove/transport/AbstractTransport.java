@@ -1,7 +1,6 @@
 package com.six.dove.transport;
 
 import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.connection.ConnectionPool;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
 import com.six.dove.transport.message.Message;
@@ -16,45 +15,66 @@ import java.util.Objects;
  * @version:
  * @describe
  */
-public abstract class AbstractTransport<C extends Connection, M extends Message> implements Transporter{
+public abstract class AbstractTransport<SendMsg extends Message, ReceMsg extends Message>
+		implements Transporter<SendMsg, ReceMsg> {
 
-    private ConnectionPool<C> connectionPool;
-    private TransportCodec transportProtocol;
-    private ReceiveMessageHandler<C, M> receiveMessageHandler;
+	private int maxBodySzie;
+	private ConnectionPool connectionPool;
+	private TransportCodec<SendMsg, ReceMsg> transportProtocol;
+	private ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler;
 
-    public AbstractTransport(ConnectionPool<C> connectionPool,TransportCodec transportProtocol,
-                             ReceiveMessageHandler<C, M> receiveMessageHandler) {
-        Objects.requireNonNull(connectionPool);
-        Objects.requireNonNull(transportProtocol);
-        Objects.requireNonNull(receiveMessageHandler);
-        this.connectionPool = connectionPool;
-        this.transportProtocol = transportProtocol;
-        this.receiveMessageHandler = receiveMessageHandler;
-    }
+	
+	@Override
+	public final void start() {
+		doStart();
+	}
+	
+	@Override
+	public final void setMaxBodySzie(int maxBodySzie) {
+		this.maxBodySzie = maxBodySzie;
+	}
+	
+	@Override
+	public final void setConnectionPool(ConnectionPool connectionPool) {
+		Objects.requireNonNull(connectionPool);
+		this.connectionPool = connectionPool;
+	}
 
-    @Override
-    public final void start() {
-        doStart();
-    }
+	@Override
+	public final void setTransportProtocol(TransportCodec<SendMsg, ReceMsg> transportProtocol) {
+		Objects.requireNonNull(transportProtocol);
+		this.transportProtocol = transportProtocol;
+	}
 
-    @Override
-    public final void shutdown() {
-        doShutdown();
-    }
+	@Override
+	public final void setReceiveMessageHandler(
+			ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler) {
+		Objects.requireNonNull(receiveMessageHandler);
+		this.receiveMessageHandler = receiveMessageHandler;
+	}
+	
+	protected final int getMaxBodySzie() {
+		return maxBodySzie;
+	}
+	
+	protected final ConnectionPool getConnectionPool() {
+		return connectionPool;
+	}
 
-    protected abstract void doStart();
+	protected final TransportCodec<SendMsg, ReceMsg> getTransportCodec() {
+		return transportProtocol;
+	}
 
-    protected abstract void doShutdown();
+	protected final ReceiveMessageHandler<ReceMsg,SendMsg> getReceiveMessageHandler() {
+		return receiveMessageHandler;
+	}
 
-    protected final ConnectionPool<C> getConnectionPool() {
-        return connectionPool;
-    }
+	@Override
+	public final void shutdown() {
+		doShutdown();
+	}
 
-    protected final TransportCodec getTransportProtocol() {
-        return transportProtocol;
-    }
+	protected abstract void doStart();
 
-    protected final ReceiveMessageHandler<C, M> getReceiveMessageHandler() {
-        return receiveMessageHandler;
-    }
+	protected abstract void doShutdown();
 }

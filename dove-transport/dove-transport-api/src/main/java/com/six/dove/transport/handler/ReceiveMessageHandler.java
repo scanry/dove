@@ -11,13 +11,13 @@ import com.six.dove.transport.message.Message;
  * @version:
  * @describe 传输层-接受消息处理handler
  */
-public interface ReceiveMessageHandler<C extends Connection, M extends Message> {
+public interface ReceiveMessageHandler<ReceMsg extends Message,SendMsg extends Message> {
 
-    void connActive(C connection);
+	void connActive(Connection<SendMsg> connection);
 
-    void receive(C connection, M message);
+	void receive(Connection<SendMsg> connection, ReceMsg message);
 
-    void connInactive(C connection);
+	void connInactive(Connection<SendMsg> connection);
 
-    void exceptionCaught(C connection, Exception exception);
+	void exceptionCaught(Connection<SendMsg> connection, Exception exception);
 }

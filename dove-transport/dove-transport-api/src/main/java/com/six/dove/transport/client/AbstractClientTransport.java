@@ -1,10 +1,8 @@
 package com.six.dove.transport.client;
 
 import com.six.dove.transport.*;
-import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.connection.Connection;
-import com.six.dove.transport.connection.ConnectionPool;
-import com.six.dove.transport.handler.ReceiveMessageHandler;
+import com.six.dove.transport.message.Request;
 import com.six.dove.transport.message.Response;
 
 /**
@@ -15,20 +13,14 @@ import com.six.dove.transport.message.Response;
  * @version:
  * @describe 客户 传输端基类
  */
-public abstract class AbstractClientTransport<C extends Connection, MessageResponse extends Response>
-		extends
-			AbstractTransport<C, MessageResponse>
-		implements
-			ClientTransport {
+public abstract class AbstractClientTransport<SendMsg extends Request, ReceMsg extends Response>
+		extends AbstractTransport<SendMsg, ReceMsg> implements ClientTransport<SendMsg,ReceMsg>{
 
 	private long connectTimeout;
 	private long sendTimeout;
 	private long writerIdleTime;
 
-	public AbstractClientTransport(long connectTimeout, long sendTimeout, long writerIdleTime,
-			ConnectionPool<C> connectionPool, TransportCodec transportProtocol,
-			ReceiveMessageHandler<C, MessageResponse> receiveMessageHandler) {
-		super(connectionPool, transportProtocol, receiveMessageHandler);
+	public AbstractClientTransport(long connectTimeout, long sendTimeout, long writerIdleTime) {
 		if (connectTimeout <= 0) {
 			throw new IllegalArgumentException(
 					String.format("The connectTimeout[%s] must greater than 0", connectTimeout));
@@ -51,9 +43,9 @@ public abstract class AbstractClientTransport<C extends Connection, MessageRespo
 	}
 
 	@Override
-	public final C connect(String host, int port) {
+	public final Connection<SendMsg> connect(String host, int port) {
 		String connectionId = Connection.generateId(host, port);
-		C connection = getConnectionPool().get(connectionId);
+		Connection<SendMsg> connection = getConnectionPool().get(connectionId);
 		if (null == connection) {
 			connection = newConnection(host, port);
 		} else if (!connection.available()) {
@@ -66,7 +58,7 @@ public abstract class AbstractClientTransport<C extends Connection, MessageRespo
 		return connection;
 	}
 
-	protected abstract C newConnection(String host, int port);
+	protected abstract Connection<SendMsg> newConnection(String host, int port);
 
 	protected final long getConnectTimeout() {
 		return connectTimeout;

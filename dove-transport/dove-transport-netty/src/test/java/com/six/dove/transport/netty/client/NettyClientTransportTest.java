@@ -28,7 +28,7 @@ public class NettyClientTransportTest {
 		int allIdleTimeSeconds = 60;
 		int connectTimeout = 3000;
 		
-		ReceiveMessageHandler<NettyConnection,Response> receiveMessageHandler = new NettyClientReceiveMessageHandlerTest<>();
+		ReceiveMessageHandler<Response,Request> receiveMessageHandler = new NettyClientReceiveMessageHandlerTest();
 		TransportCodec transportProtocol = new JavaTransportProtocol(maxMessageSize);
 		NettyClientTransport<Response> nettyClientTransport = new NettyClientTransport<>(workerIoThreads, connectTimeout,
 				allIdleTimeSeconds, transportProtocol, receiveMessageHandler);

@@ -22,16 +22,16 @@ public class NettyRpcEncoderAdapter extends MessageToByteEncoder<Message>{
 
 	final static Logger log = LoggerFactory.getLogger(NettyRpcEncoderAdapter.class);
 
-	private TransportCodec transportCodec;
+	private TransportCodec<? extends Message,? extends Message> transportCodec;
 
-	public NettyRpcEncoderAdapter(TransportCodec TransportCodec) {
+	public NettyRpcEncoderAdapter(TransportCodec<? extends Message,? extends Message> TransportCodec) {
 		Objects.requireNonNull(TransportCodec, "TransportCodec must be not null");
 		this.transportCodec = TransportCodec;
 	}
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Message message, ByteBuf out) throws Exception {
-		byte[] data=transportCodec.encode(message);
+		byte[] data=transportCodec.encode(null);
 		out.writeBytes(data);
 	}
 
