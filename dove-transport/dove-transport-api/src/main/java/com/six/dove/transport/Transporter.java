@@ -3,7 +3,7 @@ package com.six.dove.transport;
 import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.connection.ConnectionPool;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
-import com.six.dove.transport.message.Message;
+import com.six.dove.transport.util.Constant;
 
 /**
  * @author: Administrator
@@ -15,15 +15,24 @@ import com.six.dove.transport.message.Message;
  */
 public interface Transporter<SendMsg extends Message, ReceMsg extends Message> {
 
-	String LOCAL_HOST = "127.0.0.1";
+	<T> void option(Option<T> option, T value);
 
+	/**
+	 * 设置
+	 * 
+	 * @param maxBodySzie
+	 */
 	void setMaxBodySzie(int maxBodySzie);
-	
+
 	void setConnectionPool(ConnectionPool connectionPool);
 
 	void setTransportCodec(TransportCodec<SendMsg, ReceMsg> transportCodec);
 
-	void setReceiveMessageHandler(ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler);
+	void setReceiveMessageHandler(ReceiveMessageHandler<ReceMsg, SendMsg> receiveMessageHandler);
+
+	void addMessageHandler(MessageHandler<ReceMsg> messageHandler);
+
+	void addInterceptor(Interceptor.Aop aop, Interceptor<ReceMsg, SendMsg> interceptor);
 
 	/**
 	 * 启动
@@ -34,4 +43,8 @@ public interface Transporter<SendMsg extends Message, ReceMsg extends Message> {
 	 * 关闭
 	 */
 	void shutdown();
+
+	interface Option<T> extends Constant<Option<T>>, Comparable<Option<T>> {
+
+	}
 }

@@ -2,8 +2,6 @@ package com.six.dove.transport.client;
 
 import com.six.dove.transport.*;
 import com.six.dove.transport.connection.Connection;
-import com.six.dove.transport.message.Request;
-import com.six.dove.transport.message.Response;
 
 /**
  * @author: Administrator

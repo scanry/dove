@@ -1,4 +1,6 @@
-package com.six.dove.transport.message;
+package com.six.dove.transport;
+
+import com.six.dove.transport.message.MessageProtocol;
 
 /**
  * @author:MG01867

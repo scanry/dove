@@ -4,10 +4,10 @@ package com.six.dove.transport.netty.server;
 
 import org.junit.jupiter.api.Test;
 
+import com.six.dove.transport.Request;
+import com.six.dove.transport.Response;
 import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.netty.client.JavaTransportProtocol;
-import com.six.dove.transport.message.Request;
-import com.six.dove.transport.message.Response;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
 
 /**

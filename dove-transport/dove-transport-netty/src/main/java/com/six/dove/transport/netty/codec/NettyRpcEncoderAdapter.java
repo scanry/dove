@@ -5,9 +5,8 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import com.six.dove.transport.Message;
 import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.message.Message;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

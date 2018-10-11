@@ -2,9 +2,9 @@ package com.six.dove.transport.server;
 
 import com.six.dove.transport.AbstractTransport;
 import com.six.dove.transport.NetAddress;
+import com.six.dove.transport.Request;
+import com.six.dove.transport.Response;
 import com.six.dove.transport.Transporter;
-import com.six.dove.transport.message.Request;
-import com.six.dove.transport.message.Response;
 
 /**
  * @author: Administrator

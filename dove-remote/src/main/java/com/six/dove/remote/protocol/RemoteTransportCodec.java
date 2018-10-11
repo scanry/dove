@@ -2,10 +2,10 @@ package com.six.dove.remote.protocol;
 
 import java.nio.ByteBuffer;
 
+import com.six.dove.transport.Message;
+import com.six.dove.transport.Response;
 import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.exception.CodecTransportException;
-import com.six.dove.transport.message.Response;
-import com.six.dove.transport.message.Message;
 import com.six.dove.transport.message.MessageProtocol;
 
 /**

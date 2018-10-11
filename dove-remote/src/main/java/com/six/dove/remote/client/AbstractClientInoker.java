@@ -7,8 +7,8 @@ import com.six.dove.remote.client.exception.RemoteSendFailedException;
 import com.six.dove.remote.protocol.RemoteResponse;
 import com.six.dove.remote.protocol.RemoteResponseState;
 import com.six.dove.transport.connection.Connection;
+import com.six.dove.transport.Request;
 import com.six.dove.transport.client.ClientTransport;
-import com.six.dove.transport.message.Request;
 
 /**
  * @author:MG01867

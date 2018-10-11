@@ -8,8 +8,6 @@ import com.six.dove.transport.client.AbstractClientTransport;
 import com.six.dove.transport.client.ClientTransport;
 import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
-import com.six.dove.transport.message.Request;
-import com.six.dove.transport.message.Response;
 import com.six.dove.transport.netty.NettyConnection;
 import com.six.dove.transport.netty.NettyReceiveHandlerAdapter;
 import com.six.dove.transport.netty.codec.NettyRpcDecoderAdapter;

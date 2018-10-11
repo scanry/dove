@@ -4,8 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 import com.six.dove.transport.connection.AbstractConnection;
-import com.six.dove.transport.message.Message;
-
+import com.six.dove.transport.Message;
 import com.six.dove.transport.NetAddress;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

@@ -1,5 +1,7 @@
 package com.six.dove.transport.message;
 
+import com.six.dove.transport.Message;
+
 /**
  * @author: Administrator
  * @date: 2018-9-28

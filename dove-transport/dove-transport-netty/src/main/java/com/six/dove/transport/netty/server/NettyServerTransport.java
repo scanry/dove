@@ -4,8 +4,6 @@ import java.net.InetSocketAddress;
 
 import com.six.dove.transport.*;
 import com.six.dove.transport.exception.TransportException;
-import com.six.dove.transport.message.Request;
-import com.six.dove.transport.message.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -3,7 +3,6 @@ package com.six.dove.transport;
 import com.six.dove.transport.codec.TransportCodec;
 import com.six.dove.transport.connection.ConnectionPool;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
-import com.six.dove.transport.message.Message;
 
 import java.util.Objects;
 

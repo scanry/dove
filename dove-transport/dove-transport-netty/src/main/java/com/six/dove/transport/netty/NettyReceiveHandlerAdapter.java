@@ -2,8 +2,8 @@ package com.six.dove.transport.netty;
 
 import java.util.Objects;
 
+import com.six.dove.transport.Message;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
-import com.six.dove.transport.message.Message;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

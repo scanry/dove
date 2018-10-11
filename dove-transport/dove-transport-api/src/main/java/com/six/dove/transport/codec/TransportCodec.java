@@ -1,7 +1,7 @@
 package com.six.dove.transport.codec;
 
+import com.six.dove.transport.Message;
 import com.six.dove.transport.buffer.DByteBuffer;
-import com.six.dove.transport.message.Message;
 
 /**
  * @author: Administrator

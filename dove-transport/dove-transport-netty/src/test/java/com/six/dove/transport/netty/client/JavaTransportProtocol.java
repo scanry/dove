@@ -1,8 +1,8 @@
 package com.six.dove.transport.netty.client;
 
+import com.six.dove.transport.Message;
 import com.six.dove.transport.buffer.DByteBuffer;
 import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.message.Message;
 
 /**
  * @author:MG01867

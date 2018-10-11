@@ -1,7 +1,7 @@
 package com.six.dove.transport.connection;
 
+import com.six.dove.transport.Message;
 import com.six.dove.transport.NetAddress;
-import com.six.dove.transport.message.Message;
 
 /**
  * @author:MG01867

@@ -2,8 +2,8 @@ package com.six.dove.transport.netty.client;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.six.dove.transport.message.Request;
-import com.six.dove.transport.message.Response;
+import com.six.dove.transport.Request;
+import com.six.dove.transport.Response;
 import com.six.dove.transport.connection.Connection;
 import com.six.dove.transport.handler.ReceiveMessageHandler;
 

@@ -1,7 +1,7 @@
 package com.six.dove.transport.handler;
 
+import com.six.dove.transport.Message;
 import com.six.dove.transport.connection.Connection;
-import com.six.dove.transport.message.Message;
 
 /**
  * @author: Administrator
