@@ -16,14 +16,13 @@
 	</modules>
 
 	<properties>
-		<java.version>11</java.version>
+		<java.version>8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
 		<maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
 		<slf4j.version>1.7.21</slf4j.version>
 		<junit.version>5.3.1</junit.version>
 		<logback.version>1.2.2</logback.version>
-		<netty.version>4.1.29.Final</netty.version>
 		<cglib.version>3.2.4</cglib.version>
 		<grpc.version>1.8.0</grpc.version>
 		<commons-lang3.version>3.7</commons-lang3.version>

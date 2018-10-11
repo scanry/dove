@@ -1,10 +1,9 @@
 package com.six.dove.transport.netty.server;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.six.dove.transport.*;
+import com.six.dove.transport.exception.TransportException;
 import com.six.dove.transport.message.Request;
 import com.six.dove.transport.message.Response;
 
@@ -38,107 +37,78 @@ import io.netty.handler.timeout.IdleStateHandler;
  * @version:
  * @describe netty-服务 传输端
  */
-public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Request> extends AbstractServerTransport<SendMsg,ReceMsg> {
+public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Request>
+		extends AbstractServerTransport<SendMsg, ReceMsg> {
 
-    final static Logger log = LoggerFactory.getLogger(NettyServerTransport.class);
+	final static Logger log = LoggerFactory.getLogger(NettyServerTransport.class);
 
-    private static boolean isLinuxPlatform = false;
+	private EventLoopGroup bossGroup;
 
-    static {
-        String OS_NAME = System.getProperty("os.name");
-        if (OS_NAME != null && OS_NAME.toLowerCase().contains("linux")) {
-            isLinuxPlatform = true;
-        }
-    }
+	private EventLoopGroup workerIoGroup;
 
-    private EventLoopGroup bossGroup;
+	private ServerBootstrap serverBootstrap;
 
-    private EventLoopGroup workerIoGroup;
+	private int workerThreads;
 
-    private ServerBootstrap serverBootstrap;
+	private int allIdleTimeSeconds;
 
-    private boolean useEpoll;
+	public NettyServerTransport(int port, int workerIoThreads, int allIdleTimeSeconds) {
+		super(port);
+		this.workerThreads = workerIoThreads;
+	}
 
-    private int workerIoThreads;
+	@Override
+	protected void innerDoStart(NetAddress netAddress) {
+		serverBootstrap = new ServerBootstrap();
+		initGroup(serverBootstrap);
+		serverBootstrap.localAddress(new InetSocketAddress(netAddress.getHost(), netAddress.getPort()));
+		serverBootstrap.channel(Epoll.isAvailable() ? EpollServerSocketChannel.class : NioServerSocketChannel.class);
+		serverBootstrap.childHandler(buildChannelInitializer());
+		serverBootstrap.option(ChannelOption.SO_BACKLOG, 1024);
+		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);
+		serverBootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+		serverBootstrap.childOption(ChannelOption.SO_KEEPALIVE, false);
+		serverBootstrap.childOption(ChannelOption.TCP_NODELAY, true);
+		Thread startThread = new Thread(() -> {
+			try {
+				ChannelFuture sync = serverBootstrap.bind().sync();
+				sync.channel().closeFuture().sync();
+			} catch (InterruptedException e) {
+				throw new TransportException("netty serverBootstrap err", e);
+			} finally {
+				doShutdown();
+			}
+		}, "netty-start-thread");
+		startThread.setDaemon(true);
+		startThread.start();
+	}
 
-    private int allIdleTimeSeconds;
+	private void initGroup(ServerBootstrap serverBootstrap) {
+		bossGroup = new NioEventLoopGroup(1);
+		if (Epoll.isAvailable()) {
+			workerIoGroup = new EpollEventLoopGroup(workerThreads);
+		} else {
+			workerIoGroup = new NioEventLoopGroup(workerThreads);
+		}
+		serverBootstrap.group(bossGroup, workerIoGroup);
+	}
 
-    public NettyServerTransport(int port,int workerIoThreads, int allIdleTimeSeconds) {
-        super(port);
-        this.workerIoThreads = workerIoThreads;
-    }
+	private ChannelInitializer<SocketChannel> buildChannelInitializer() {
+		return new ChannelInitializer<SocketChannel>() {
+			@Override
+			public void initChannel(SocketChannel ch) {
+				ch.pipeline().addLast(new IdleStateHandler(0, 0, allIdleTimeSeconds));
+				ch.pipeline().addLast(new NettyServerAcceptorIdleStateTrigger());
+				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
+				ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(), getTransportCodec()));
+				ch.pipeline().addLast(new NettyReceiveHandlerAdapter<>(getReceiveMessageHandler()));
+			}
+		};
+	}
 
-    @Override
-    protected void innerDoStart(NetAddress netAddress) {
-        bossGroup = new NioEventLoopGroup(1, new ThreadFactory() {
-            private AtomicInteger threadIndex = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "NettyRpcServer-boss-io-thread_" + this.threadIndex.incrementAndGet());
-            }
-        });
-
-        if (useEpoll()) {
-            workerIoGroup = new EpollEventLoopGroup(workerIoThreads <= 0 ? 0 : workerIoThreads, new ThreadFactory() {
-                private AtomicInteger threadIndex = new AtomicInteger(0);
-
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "NettyRpcServer-worker-io-thread_" + this.threadIndex.incrementAndGet());
-                }
-            });
-        } else {
-            workerIoGroup = new NioEventLoopGroup(workerIoThreads <= 0 ? 0 : workerIoThreads, new ThreadFactory() {
-                private AtomicInteger threadIndex = new AtomicInteger(0);
-
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "NettyRpcServer-worker-io-thread_" + this.threadIndex.incrementAndGet());
-                }
-            });
-        }
-        serverBootstrap = new ServerBootstrap();
-        serverBootstrap.group(bossGroup, workerIoGroup).localAddress(new InetSocketAddress(netAddress.getHost(), netAddress.getPort()))
-                .channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    public void initChannel(SocketChannel ch){
-                        ch.pipeline().addLast(new IdleStateHandler(0, 0, allIdleTimeSeconds));
-                        ch.pipeline().addLast(new NettyServerAcceptorIdleStateTrigger());
-                        ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
-                        ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(),getTransportCodec()));
-                        ch.pipeline().addLast(new NettyReceiveHandlerAdapter<>(getReceiveMessageHandler()));
-                    }
-                }).option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_REUSEADDR, true)
-                .childOption(ChannelOption.SO_KEEPALIVE, false).option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        Thread startThread = new Thread(() -> {
-            try {
-                ChannelFuture sync = serverBootstrap.bind().sync();
-                sync.channel().closeFuture().sync();
-            } catch (InterruptedException e) {
-                log.error("netty serverBootstrap err", e);
-            } finally {
-                workerIoGroup.shutdownGracefully();
-                bossGroup.shutdownGracefully();
-            }
-        }, "netty-start-thread");
-        startThread.setDaemon(true);
-        startThread.start();
-    }
-
-    private boolean useEpoll() {
-        return isLinuxPlatform && useEpoll && Epoll.isAvailable();
-    }
-
-    @Override
-    public void doShutdown() {
-        if (null != bossGroup) {
-            bossGroup.shutdownGracefully();
-        }
-        if (null != workerIoGroup) {
-            workerIoGroup.shutdownGracefully();
-        }
-    }
+	@Override
+	protected void doShutdown() {
+		workerIoGroup.shutdownGracefully();
+		bossGroup.shutdownGracefully();
+	}
 }

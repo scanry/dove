@@ -16,6 +16,5 @@
   	<modules>
     	<module>dove-transport-api</module>
 		<module>dove-transport-netty</module>
-        <module>dove-transport-socket</module>
     </modules>
 </project>
