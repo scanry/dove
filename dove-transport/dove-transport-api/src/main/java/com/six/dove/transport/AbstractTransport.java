@@ -41,7 +41,7 @@ public abstract class AbstractTransport<SendMsg extends Message, ReceMsg extends
 	}
 
 	@Override
-	public final void setTransportProtocol(TransportCodec<SendMsg, ReceMsg> transportProtocol) {
+	public final void setTransportCodec(TransportCodec<SendMsg, ReceMsg> transportProtocol) {
 		Objects.requireNonNull(transportProtocol);
 		this.transportProtocol = transportProtocol;
 	}

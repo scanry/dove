@@ -21,7 +21,7 @@ public interface Transporter<SendMsg extends Message, ReceMsg extends Message> {
 	
 	void setConnectionPool(ConnectionPool connectionPool);
 
-	void setTransportProtocol(TransportCodec<SendMsg, ReceMsg> transportProtocol);
+	void setTransportCodec(TransportCodec<SendMsg, ReceMsg> transportCodec);
 
 	void setReceiveMessageHandler(ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler);
 
