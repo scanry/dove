@@ -105,5 +105,4 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 	protected void doShutdown() {
 		workerGroup.shutdownGracefully();
 	}
-
 }

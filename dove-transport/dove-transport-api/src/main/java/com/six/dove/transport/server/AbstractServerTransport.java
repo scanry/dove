@@ -4,7 +4,6 @@ import com.six.dove.transport.AbstractTransport;
 import com.six.dove.transport.NetAddress;
 import com.six.dove.transport.Request;
 import com.six.dove.transport.Response;
-import com.six.dove.transport.Transporter;
 
 /**
  * @author: Administrator
@@ -20,7 +19,7 @@ public abstract class AbstractServerTransport<SendMsg extends Response, ReceMsg 
 	private NetAddress netAddress;
 
 	public AbstractServerTransport(int port) {
-		this(Transporter.LOCAL_HOST, port);
+		this("127.0.0.1", port);
 	}
 
 	public AbstractServerTransport(String host, int port) {

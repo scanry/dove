@@ -15,8 +15,6 @@ import com.six.dove.transport.util.Constant;
  */
 public interface Transporter<SendMsg extends Message, ReceMsg extends Message> {
 
-	<T> void option(Option<T> option, T value);
-
 	/**
 	 * 设置
 	 * 

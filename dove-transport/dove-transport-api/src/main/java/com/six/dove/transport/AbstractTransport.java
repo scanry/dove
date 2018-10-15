@@ -52,6 +52,17 @@ public abstract class AbstractTransport<SendMsg extends Message, ReceMsg extends
 		this.receiveMessageHandler = receiveMessageHandler;
 	}
 	
+	@Override
+	public void addMessageHandler(MessageHandler<ReceMsg> messageHandler) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public final void addInterceptor(Interceptor.Aop aop, Interceptor<ReceMsg, SendMsg> interceptor) {
+		
+	}
+	
 	protected final int getMaxBodySzie() {
 		return maxBodySzie;
 	}
