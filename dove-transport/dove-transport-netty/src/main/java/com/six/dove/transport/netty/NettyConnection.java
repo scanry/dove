@@ -31,7 +31,7 @@ public class NettyConnection<SendMsg extends Message> extends AbstractConnection
         if (stockChannel == null) {
             InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
             NetAddress netAddress = new NetAddress(inetSocketAddress.getHostString(), inetSocketAddress.getPort());
-            NettyConnection<Message> newNChannel = new NettyConnection<>(channel, netAddress);
+            NettyConnection<SendMsg> newNChannel = new NettyConnection<>(channel, netAddress);
             stockChannel = attr.setIfAbsent(newNChannel);
             if (stockChannel == null) {
                 stockChannel = newNChannel;
