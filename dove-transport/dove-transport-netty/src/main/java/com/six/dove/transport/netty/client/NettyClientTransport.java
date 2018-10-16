@@ -57,7 +57,7 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(workerGroup);
 		bootstrap.channel(NioSocketChannel.class);
-		bootstrap.option(ChannelOption.SO_KEEPALIVE, true).option(ChannelOption.TCP_NODELAY, true)
+		bootstrap.option(ChannelOption.SO_KEEPALIVE, false).option(ChannelOption.TCP_NODELAY, true)
 				.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -65,7 +65,7 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 				ch.pipeline().addLast(new IdleStateHandler(0, (int) getWriterIdleTime(), 0));
 				ch.pipeline().addLast(new NettyClientAcceptorIdleStateTrigger());
 				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
-				ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(), getTransportCodec()));
+				ch.pipeline().addLast(new NettyRpcDecoderAdapter(getMaxBodySzie(), getTransportCodec()));
 				ch.pipeline().addLast(clientNettyReceiveMessageAdapter);
 			}
 		});

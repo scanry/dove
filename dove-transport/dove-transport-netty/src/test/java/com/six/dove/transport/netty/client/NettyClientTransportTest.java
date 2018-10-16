@@ -7,7 +7,7 @@ import com.six.dove.transport.NetAddress;
 import com.six.dove.transport.ReceiveMessageHandler;
 import com.six.dove.transport.Request;
 import com.six.dove.transport.Response;
-import com.six.dove.transport.TransportCodec;
+import com.six.dove.transport.netty.JavaTransportProtocol;
 
 
 /**
@@ -27,7 +27,7 @@ public class NettyClientTransportTest {
 		int workerIoThreads = 4;
 		NetAddress netAddress=new NetAddress(host, port);
 		ReceiveMessageHandler<Response,Request> receiveMessageHandler = new NettyClientReceiveMessageHandlerTest();
-		TransportCodec<Request,Response> transportCodec = new JavaTransportProtocol<>();
+		JavaTransportProtocol transportCodec = new JavaTransportProtocol();
 		NettyClientTransport<Request,Response> nettyClientTransport = new NettyClientTransport<>(workerIoThreads);
 		nettyClientTransport.setTransportCodec(transportCodec);
 		nettyClientTransport.setReceiveMessageHandler(receiveMessageHandler);

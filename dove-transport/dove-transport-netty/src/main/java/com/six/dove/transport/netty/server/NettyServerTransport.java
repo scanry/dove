@@ -57,6 +57,7 @@ public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Requ
 
 	@Override
 	public void start() {
+		log.info("The NettyServerTransport will start");
 		super.start();
 		serverBootstrap = new ServerBootstrap();
 		bossGroup = new NioEventLoopGroup(1);
@@ -87,6 +88,7 @@ public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Requ
 		}, "netty-start-thread");
 		startThread.setDaemon(true);
 		startThread.start();
+		log.info("The NettyServerTransport already started");
 	}
 
 	private ChannelInitializer<SocketChannel> buildChannelInitializer() {
@@ -96,7 +98,7 @@ public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Requ
 				ch.pipeline().addLast(new IdleStateHandler(0, 0, allIdleTimeSeconds));
 				ch.pipeline().addLast(new NettyServerAcceptorIdleStateTrigger());
 				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
-				ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(), getTransportCodec()));
+				ch.pipeline().addLast(new NettyRpcDecoderAdapter(getMaxBodySzie(), getTransportCodec()));
 				ch.pipeline().addLast(new NettyReceiveHandlerAdapter<>(getReceiveMessageHandler()));
 			}
 		};

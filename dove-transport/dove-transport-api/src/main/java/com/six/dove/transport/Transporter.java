@@ -32,7 +32,7 @@ public interface Transporter<SendMsg extends Message, ReceMsg extends Message> {
 	 * 
 	 * @param transportCodec
 	 */
-	void setTransportCodec(TransportCodec<SendMsg, ReceMsg> transportCodec);
+	void setTransportCodec(TransportCodec transportCodec);
 
 	/**
 	 * 设置消息接收handler

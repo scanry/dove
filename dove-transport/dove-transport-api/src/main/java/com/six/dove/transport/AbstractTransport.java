@@ -16,10 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractTransport<SendMsg extends Message, ReceMsg extends Message>
 		implements Transporter<SendMsg, ReceMsg> {
 
-	private int maxBodySzie;
+	public final static int DEFAULT_MAX_BODY_SIZE=1024*1000*5; 
+	private int maxBodySzie=DEFAULT_MAX_BODY_SIZE;
 	private ConcurrentHashMap<NetAddress, Connection<SendMsg>> connectionPool = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<Interceptor.Aop, List<Interceptor<ReceMsg, SendMsg>>> interceptors = new ConcurrentHashMap<>();
-	private TransportCodec<SendMsg, ReceMsg> transportProtocol;
+	private TransportCodec transportProtocol;
 	private ReceiveMessageHandler<ReceMsg, SendMsg> receiveMessageHandler;
 
 	protected final Connection<SendMsg> getConnection(NetAddress netAddress) {
@@ -45,7 +46,7 @@ public abstract class AbstractTransport<SendMsg extends Message, ReceMsg extends
 	}
 
 	@Override
-	public final void setTransportCodec(TransportCodec<SendMsg, ReceMsg> transportProtocol) {
+	public final void setTransportCodec(TransportCodec transportProtocol) {
 		Objects.requireNonNull(transportProtocol);
 		this.transportProtocol = transportProtocol;
 	}
@@ -72,7 +73,7 @@ public abstract class AbstractTransport<SendMsg extends Message, ReceMsg extends
 		return maxBodySzie;
 	}
 
-	protected final TransportCodec<SendMsg, ReceMsg> getTransportCodec() {
+	protected final TransportCodec getTransportCodec() {
 		return transportProtocol;
 	}
 

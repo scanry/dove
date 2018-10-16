@@ -1,6 +1,6 @@
 package com.six.dove.transport;
 
-import com.six.dove.transport.buffer.DByteBuffer;
+import java.nio.ByteBuffer;
 
 /**
  * @author: Administrator
@@ -10,9 +10,9 @@ import com.six.dove.transport.buffer.DByteBuffer;
  * @version:
  * @describe 消息编解码
  */
-public interface TransportCodec<SendMsg extends Message,ReceMsg extends Message>{
+public interface TransportCodec {
 
-	ReceMsg decoder(DByteBuffer byteBuffer);
+	Message decoder(ByteBuffer byteBuffer);
 
-	byte[] encode(SendMsg message);
+	ByteBuffer encode(Message message);
 }

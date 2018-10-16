@@ -17,7 +17,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @describe netty handler适配器
  */
 public class NettyReceiveHandlerAdapter<SendMsg extends Message, ReceMsg extends Message>
-		extends SimpleChannelInboundHandler<ReceMsg> {
+		extends SimpleChannelInboundHandler<Message> {
 
 	private ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler;
 
@@ -40,10 +40,11 @@ public class NettyReceiveHandlerAdapter<SendMsg extends Message, ReceMsg extends
 		receiveMessageHandler.connInactive(nettyConnection);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, ReceMsg message) {
+	protected void channelRead0(ChannelHandlerContext ctx, Message message) {
 		NettyConnection<SendMsg> nettyConnection = NettyConnection.channelToNettyConnection(ctx.channel());
-		receiveMessageHandler.receive(nettyConnection, message);
+		receiveMessageHandler.receive(nettyConnection,(ReceMsg)message);
 	}
 
 	@Override

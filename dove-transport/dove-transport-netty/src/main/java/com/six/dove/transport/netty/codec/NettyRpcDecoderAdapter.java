@@ -20,13 +20,15 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  * @date 创建时间：2017年3月23日 上午8:50:07
  * 
  */
-public class NettyRpcDecoderAdapter<SendMsg extends Message,ReceMsg extends Message> extends LengthFieldBasedFrameDecoder {
+public class NettyRpcDecoderAdapter
+		extends LengthFieldBasedFrameDecoder {
 
 	final static Logger log = LoggerFactory.getLogger(NettyRpcDecoderAdapter.class);
 
-	private TransportCodec<? extends Message,? extends Message> transportCodec;
+	private TransportCodec transportCodec;
 
-	public NettyRpcDecoderAdapter(int maxBodySzie,TransportCodec<? extends Message,? extends Message> transportCodec) {
+	public NettyRpcDecoderAdapter(int maxBodySzie,
+			TransportCodec transportCodec) {
 		super(maxBodySzie, MessageProtocol.MSG_TYPE, MessageProtocol.BODY_LENGTH);
 		Objects.requireNonNull(transportCodec, "transportCodec must be not null");
 		this.transportCodec = transportCodec;
@@ -34,19 +36,19 @@ public class NettyRpcDecoderAdapter<SendMsg extends Message,ReceMsg extends Mess
 
 	@Override
 	public Object decode(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
-		Object transportMessage = null;
+		Message message = null;
 		ByteBuf frame = null;
 		try {
 			frame = (ByteBuf) super.decode(ctx, byteBuf);
 			if (null != frame) {
 				ByteBuffer byteBuffer = frame.nioBuffer();
-				transportMessage = transportCodec.decoder(null);
+				message = transportCodec.decoder(byteBuffer);
 			}
 		} finally {
 			if (null != frame) {
 				frame.release();
 			}
 		}
-		return transportMessage;
+		return message;
 	}
 }
