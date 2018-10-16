@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.six.dove.transport.Message;
-import com.six.dove.transport.codec.TransportCodec;
+import com.six.dove.transport.TransportCodec;
 import com.six.dove.transport.message.MessageProtocol;
 
 import io.netty.buffer.ByteBuf;

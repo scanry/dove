@@ -1,7 +1,4 @@
-package com.six.dove.transport.connection;
-
-import com.six.dove.transport.Message;
-import com.six.dove.transport.NetAddress;
+package com.six.dove.transport;
 
 import java.util.Objects;
 
@@ -15,19 +12,12 @@ import java.util.Objects;
  */
 public abstract class AbstractConnection<SendMsg extends Message> implements Connection<SendMsg> {
 
-    private String id;
     private NetAddress netAddress;
     private long lastActivityTime;
 
     public AbstractConnection(NetAddress netAddress) {
         Objects.requireNonNull(netAddress);
         this.netAddress = netAddress;
-        this.id =Connection.generateId(netAddress);
-    }
-
-    @Override
-    public final String getId() {
-        return id;
     }
 
     @Override

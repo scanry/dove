@@ -1,13 +1,13 @@
 package com.six.dove.transport.netty.client;
 
-import com.six.dove.transport.connection.Connection;
-
 import org.junit.jupiter.api.Test;
 
+import com.six.dove.transport.Connection;
+import com.six.dove.transport.NetAddress;
+import com.six.dove.transport.ReceiveMessageHandler;
 import com.six.dove.transport.Request;
 import com.six.dove.transport.Response;
-import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.handler.ReceiveMessageHandler;
+import com.six.dove.transport.TransportCodec;
 
 
 /**
@@ -25,13 +25,13 @@ public class NettyClientTransportTest {
 		String host = "127.0.0.1";
 		int port = 8888;
 		int workerIoThreads = 4;
-		
+		NetAddress netAddress=new NetAddress(host, port);
 		ReceiveMessageHandler<Response,Request> receiveMessageHandler = new NettyClientReceiveMessageHandlerTest();
 		TransportCodec<Request,Response> transportCodec = new JavaTransportProtocol<>();
 		NettyClientTransport<Request,Response> nettyClientTransport = new NettyClientTransport<>(workerIoThreads);
 		nettyClientTransport.setTransportCodec(transportCodec);
 		nettyClientTransport.setReceiveMessageHandler(receiveMessageHandler);
-		Connection<Request> connection = nettyClientTransport.connect(host, port);
+		Connection<Request> connection = nettyClientTransport.connect(netAddress);
 		Request data=new Request();
 		connection.send(data, sendFutrue -> {
 			if(sendFutrue.isSucceed()) {

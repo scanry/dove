@@ -6,8 +6,6 @@ import java.util.concurrent.TimeUnit;
 import com.six.dove.transport.*;
 import com.six.dove.transport.client.AbstractClientTransport;
 import com.six.dove.transport.client.ClientTransport;
-import com.six.dove.transport.connection.Connection;
-import com.six.dove.transport.handler.ReceiveMessageHandler;
 import com.six.dove.transport.netty.NettyConnection;
 import com.six.dove.transport.netty.NettyReceiveHandlerAdapter;
 import com.six.dove.transport.netty.codec.NettyRpcDecoderAdapter;
@@ -52,9 +50,8 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 	}
 
 	@Override
-	protected Connection<SendMsg> newConnection(String host, int port) {
+	protected Connection<SendMsg> newConnection(NetAddress netAddress) {
 		CountDownLatch cdl = new CountDownLatch(1);
-		getReceiveMessageHandler();
 		ClientNettyReceiveMessageAdapter clientNettyReceiveMessageAdapter = new ClientNettyReceiveMessageAdapter(cdl,
 				getReceiveMessageHandler());
 		Bootstrap bootstrap = new Bootstrap();
@@ -68,17 +65,17 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 				ch.pipeline().addLast(new IdleStateHandler(0, (int) getWriterIdleTime(), 0));
 				ch.pipeline().addLast(new NettyClientAcceptorIdleStateTrigger());
 				ch.pipeline().addLast(new NettyRpcEncoderAdapter(getTransportCodec()));
-				ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(),getTransportCodec()));
+				ch.pipeline().addLast(new NettyRpcDecoderAdapter<>(getMaxBodySzie(), getTransportCodec()));
 				ch.pipeline().addLast(clientNettyReceiveMessageAdapter);
 			}
 		});
-		bootstrap.connect(host, port);
+		bootstrap.connect(netAddress.getHost(), netAddress.getPort());
 		try {
 			cdl.await(getConnectTimeout(), TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e) {
 			// ignore
 		}
-		return new NettyConnection<>(clientNettyReceiveMessageAdapter.channel, new NetAddress(host, port));
+		return new NettyConnection<>(clientNettyReceiveMessageAdapter.channel, netAddress);
 	}
 
 	class ClientNettyReceiveMessageAdapter extends NettyReceiveHandlerAdapter<SendMsg, ReceMsg> {
@@ -87,7 +84,7 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 		private Channel channel;
 
 		ClientNettyReceiveMessageAdapter(CountDownLatch cdl,
-				ReceiveMessageHandler<ReceMsg,SendMsg> receiveMessageHandler) {
+				ReceiveMessageHandler<ReceMsg, SendMsg> receiveMessageHandler) {
 			super(receiveMessageHandler);
 			this.cdl = cdl;
 		}
@@ -102,7 +99,8 @@ public class NettyClientTransport<SendMsg extends Request, ReceMsg extends Respo
 	}
 
 	@Override
-	protected void doShutdown() {
+	public void shutdown() {
+		super.shutdown();
 		workerGroup.shutdownGracefully();
 	}
 }

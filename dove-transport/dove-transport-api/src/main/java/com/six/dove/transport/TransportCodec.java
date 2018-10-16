@@ -1,6 +1,5 @@
-package com.six.dove.transport.codec;
+package com.six.dove.transport;
 
-import com.six.dove.transport.Message;
 import com.six.dove.transport.buffer.DByteBuffer;
 
 /**

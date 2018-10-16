@@ -17,8 +17,8 @@ import com.six.dove.remote.compiler.Compiler;
 import com.six.dove.remote.protocol.RemoteRequest;
 import com.six.dove.remote.protocol.RemoteRequestParam;
 import com.six.dove.remote.protocol.RemoteResponse;
+import com.six.dove.transport.TransportCodec;
 import com.six.dove.transport.client.ClientTransport;
-import com.six.dove.transport.codec.TransportCodec;
 
 import javassist.ClassPool;
 import javassist.CtClass;

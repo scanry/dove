@@ -1,7 +1,6 @@
 package com.six.dove.transport.client;
 
 import com.six.dove.transport.*;
-import com.six.dove.transport.connection.Connection;
 
 /**
  * @author: Administrator
@@ -12,7 +11,7 @@ import com.six.dove.transport.connection.Connection;
  * @describe 客户 传输端基类
  */
 public abstract class AbstractClientTransport<SendMsg extends Request, ReceMsg extends Response>
-		extends AbstractTransport<SendMsg, ReceMsg> implements ClientTransport<SendMsg,ReceMsg>{
+		extends AbstractTransport<SendMsg, ReceMsg> implements ClientTransport<SendMsg, ReceMsg> {
 
 	private long connectTimeout;
 	private long sendTimeout;
@@ -36,27 +35,21 @@ public abstract class AbstractClientTransport<SendMsg extends Request, ReceMsg e
 	}
 
 	@Override
-	protected final void doStart() {
-
-	}
-
-	@Override
-	public final Connection<SendMsg> connect(String host, int port) {
-		String connectionId = Connection.generateId(host, port);
-		Connection<SendMsg> connection = getConnectionPool().get(connectionId);
+	public final Connection<SendMsg> connect(NetAddress netAddress) {
+		Connection<SendMsg> connection = getConnection(netAddress);
 		if (null == connection) {
-			connection = newConnection(host, port);
+			connection = newConnection(netAddress);
 		} else if (!connection.available()) {
-			getConnectionPool().remove(connection);
-			connection = newConnection(host, port);
+			removeConnection(connection);
+			connection = newConnection(netAddress);
 		}
 		if (!connection.available()) {
-			throw new RuntimeException(String.format("connection address[%s] failed", connectionId));
+			throw new RuntimeException(String.format("connection address[%s] failed", netAddress));
 		}
 		return connection;
 	}
 
-	protected abstract Connection<SendMsg> newConnection(String host, int port);
+	protected abstract Connection<SendMsg> newConnection(NetAddress netAddress);
 
 	protected final long getConnectTimeout() {
 		return connectTimeout;

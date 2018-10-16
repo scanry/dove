@@ -1,11 +1,9 @@
 package com.six.dove.transport.client;
 
-import com.six.dove.transport.connection.Connection;
+import com.six.dove.transport.Connection;
 import com.six.dove.transport.Message;
 import com.six.dove.transport.NetAddress;
 import com.six.dove.transport.Transporter;
-
-import java.util.Objects;
 
 /**
  * @author: Administrator
@@ -39,16 +37,6 @@ public interface ClientTransport<SendMsg extends Message, ReceMsg extends Messag
 	 * @param port 端口
 	 * @return 返回可用链接
 	 */
-	Connection<SendMsg> connect(String host, int port);
+	Connection<SendMsg> connect(NetAddress netAddress);
 
-	/**
-	 * 通过netAddress获取链接
-	 *
-	 * @param netAddress 网络地址
-	 * @return 返回可用链接
-	 */
-	default Connection<SendMsg> connect(NetAddress netAddress) {
-		Objects.requireNonNull(netAddress);
-		return connect(netAddress.getHost(), netAddress.getPort());
-	}
 }

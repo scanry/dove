@@ -1,10 +1,5 @@
 package com.six.dove.transport;
 
-import com.six.dove.transport.codec.TransportCodec;
-import com.six.dove.transport.connection.ConnectionPool;
-import com.six.dove.transport.handler.ReceiveMessageHandler;
-import com.six.dove.transport.util.Constant;
-
 /**
  * @author: Administrator
  * @date: 2018-9-28
@@ -16,33 +11,41 @@ import com.six.dove.transport.util.Constant;
 public interface Transporter<SendMsg extends Message, ReceMsg extends Message> {
 
 	/**
-	 * 设置
+	 * 启动
+	 */
+	default void start() {}
+
+	/**
+	 * 关闭
+	 */
+	default void shutdown() {}
+
+	/**
+	 * 设置 消息体最大size
 	 * 
 	 * @param maxBodySzie
 	 */
 	void setMaxBodySzie(int maxBodySzie);
 
-	void setConnectionPool(ConnectionPool connectionPool);
-
+	/**
+	 * 设置编解码器
+	 * 
+	 * @param transportCodec
+	 */
 	void setTransportCodec(TransportCodec<SendMsg, ReceMsg> transportCodec);
 
+	/**
+	 * 设置消息接收handler
+	 * 
+	 * @param receiveMessageHandler
+	 */
 	void setReceiveMessageHandler(ReceiveMessageHandler<ReceMsg, SendMsg> receiveMessageHandler);
 
-	void addMessageHandler(MessageHandler<ReceMsg> messageHandler);
-
+	/**
+	 * 设置消息拦截器
+	 * 
+	 * @param aop
+	 * @param interceptor
+	 */
 	void addInterceptor(Interceptor.Aop aop, Interceptor<ReceMsg, SendMsg> interceptor);
-
-	/**
-	 * 启动
-	 */
-	void start();
-
-	/**
-	 * 关闭
-	 */
-	void shutdown();
-
-	interface Option<T> extends Constant<Option<T>>, Comparable<Option<T>> {
-
-	}
 }

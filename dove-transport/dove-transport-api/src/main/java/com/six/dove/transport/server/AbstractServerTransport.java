@@ -31,13 +31,6 @@ public abstract class AbstractServerTransport<SendMsg extends Response, ReceMsg 
 	}
 
 	@Override
-	public final void doStart() {
-		innerDoStart(netAddress);
-	}
-
-	protected abstract void innerDoStart(NetAddress netAddress);
-
-	@Override
 	public final NetAddress getNetAddress() {
 		return netAddress;
 	}

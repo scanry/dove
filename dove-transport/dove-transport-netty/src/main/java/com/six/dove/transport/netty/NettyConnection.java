@@ -3,7 +3,7 @@ package com.six.dove.transport.netty;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
-import com.six.dove.transport.connection.AbstractConnection;
+import com.six.dove.transport.AbstractConnection;
 import com.six.dove.transport.Message;
 import com.six.dove.transport.NetAddress;
 import io.netty.channel.Channel;
@@ -61,4 +61,9 @@ public class NettyConnection<SendMsg extends Message> extends AbstractConnection
     public void close() {
         channel.close();
     }
+
+	@Override
+	public boolean closed() {
+		return !channel.isOpen();
+	}
 }

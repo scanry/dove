@@ -56,10 +56,17 @@ public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Requ
 	}
 
 	@Override
-	protected void innerDoStart(NetAddress netAddress) {
+	public void start() {
+		super.start();
 		serverBootstrap = new ServerBootstrap();
-		initGroup(serverBootstrap);
-		serverBootstrap.localAddress(new InetSocketAddress(netAddress.getHost(), netAddress.getPort()));
+		bossGroup = new NioEventLoopGroup(1);
+		if (Epoll.isAvailable()) {
+			workerIoGroup = new EpollEventLoopGroup(workerThreads);
+		} else {
+			workerIoGroup = new NioEventLoopGroup(workerThreads);
+		}
+		serverBootstrap.group(bossGroup, workerIoGroup);
+		serverBootstrap.localAddress(new InetSocketAddress(getNetAddress().getHost(), getNetAddress().getPort()));
 		serverBootstrap.channel(Epoll.isAvailable() ? EpollServerSocketChannel.class : NioServerSocketChannel.class);
 		serverBootstrap.childHandler(buildChannelInitializer());
 		serverBootstrap.option(ChannelOption.SO_BACKLOG, 1024);
@@ -74,21 +81,12 @@ public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Requ
 			} catch (InterruptedException e) {
 				throw new TransportException("netty serverBootstrap err", e);
 			} finally {
-				doShutdown();
+				workerIoGroup.shutdownGracefully();
+				bossGroup.shutdownGracefully();
 			}
 		}, "netty-start-thread");
 		startThread.setDaemon(true);
 		startThread.start();
-	}
-
-	private void initGroup(ServerBootstrap serverBootstrap) {
-		bossGroup = new NioEventLoopGroup(1);
-		if (Epoll.isAvailable()) {
-			workerIoGroup = new EpollEventLoopGroup(workerThreads);
-		} else {
-			workerIoGroup = new NioEventLoopGroup(workerThreads);
-		}
-		serverBootstrap.group(bossGroup, workerIoGroup);
 	}
 
 	private ChannelInitializer<SocketChannel> buildChannelInitializer() {
@@ -105,7 +103,8 @@ public class NettyServerTransport<SendMsg extends Response, ReceMsg extends Requ
 	}
 
 	@Override
-	protected void doShutdown() {
+	public void shutdown() {
+		super.shutdown();
 		workerIoGroup.shutdownGracefully();
 		bossGroup.shutdownGracefully();
 	}

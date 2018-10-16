@@ -1,7 +1,4 @@
-package com.six.dove.transport.connection;
-
-import com.six.dove.transport.Message;
-import com.six.dove.transport.NetAddress;
+package com.six.dove.transport;
 
 /**
  * @author:MG01867
@@ -11,19 +8,6 @@ import com.six.dove.transport.NetAddress;
  * @describe 传输层连接接口
  */
 public interface Connection<SendMsg extends Message> extends AutoCloseable {
-
-    static String generateId(NetAddress netAddress){
-        return generateId(netAddress.getHost(), netAddress.getPort());
-    }
-
-    static String generateId(String host,int port){
-        return host+":"+port;
-    }
-    /**
-     * 获取ID
-     * @return ID
-     */
-    String getId();
 
     /**
      * 获取连接远程地址
@@ -38,6 +22,14 @@ public interface Connection<SendMsg extends Message> extends AutoCloseable {
      * @return 是否可用
      */
     boolean available();
+    
+    
+    /**
+     * 是否关闭
+     *
+     * @return 是否关闭
+     */
+    boolean closed();
 
     /**
      * 获取最近活动时间
